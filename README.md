@@ -4,6 +4,8 @@ Le projet : une boutique d'articles vintage a des notes brutes de vendeur
 (« veste jean levis annees 80, petit accroc poche gauche… ») et veut des
 fiches produits propres, honnêtes et prêtes à publier.
 
+> Tu débutes en Python ? Lis [GUIDE_DEBUTANT.md](GUIDE_DEBUTANT.md) : chaque fichier y est expliqué en détail.
+
 On construit la solution **étape par étape**. Chaque étape ajoute un nouveau
 schéma de workflow, avec un script court qu'on peut lancer et modifier.
 
