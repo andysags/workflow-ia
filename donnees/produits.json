@@ -1,0 +1,22 @@
+[
+  {
+    "id": "P001",
+    "notes": "veste jean levis 70505 annees 80, bien delavee, taille M, petit accroc poche gauche, boutons cuivre d'origine",
+    "prix_achat": 18
+  },
+  {
+    "id": "P002",
+    "notes": "lampe champignon orange 70s plastique, fonctionne, prise refaite, h 35cm, petite rayure sur le pied",
+    "prix_achat": 25
+  },
+  {
+    "id": "P003",
+    "notes": "sac a main cuir marron 60s, forme trapeze, fermoir dore, doublure un peu tachee, anse solide",
+    "prix_achat": 30
+  },
+  {
+    "id": "P004",
+    "notes": "chemise wax fleurs bleu et jaune faite main annees 90, manches courtes, taille L, comme neuve",
+    "prix_achat": 8
+  }
+]
