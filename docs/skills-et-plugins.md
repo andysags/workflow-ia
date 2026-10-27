@@ -26,6 +26,8 @@ Légende :
 
 ## Points d'attention
 
+- **workflow-ia** : installe un hook `PreToolUse` sur Bash (`hooks/garde-deploiement.mjs`, Node) qui bloque les déploiements Netlify risqués. Il ne prend aucune décision pour les autres commandes.
+
 - **ui-ux-pro-max** : le script de recherche demande Python 3 (bibliothèque standard uniquement). `design/scripts/logo/generate.py` appelle des API d'images externes (Gemini, AtlasCloud, MuAPI), uniquement si une clé API est fournie. `ui-styling/scripts/shadcn_add.py` lance la CLI shadcn via `npx`.
 - **backend-design** : installe trois hooks `PreToolUse` sur `Write|Edit` (contrôles de migration, de composant backend et de sécurité) qui lancent `python`. Sur une machine où seul `python3` existe, ces hooks échouent sans bloquer.
 - **openclaw-skills:skill-creator** mentionne `{baseDir}` et `skill_workshop`, propres à OpenClaw. Son script se lance avec `python3 <chemin>/scripts/quick_validate.py <dossier-du-skill>`. Il refuse le champ `argument-hint`, pourtant valide dans Claude Code.

@@ -104,6 +104,14 @@ Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de t
 
 Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
 
+## Garde-fous
+
+Certaines actions sont trop risquées pour reposer uniquement sur les consignes des agents. Le plugin installe un **hook** que Claude Code exécute avant chaque commande :
+
+- **Déploiement Netlify** : dans un projet workflow-ia, tout `netlify deploy` sans dossier désigné (`--dir`) est bloqué. Partout, un dossier publié qui n'est pas un site construit (pas d'`index.html`), qui contient des fichiers internes (journaux, livrables, `.env`, `.git`, `node_modules`) ou trop de fichiers est refusé. Ce garde-fou a été ajouté après un incident réel : un déploiement lancé depuis le mauvais dossier avait publié des journaux de travail.
+
+Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
+
 ## Ce que l'équipe ne fait pas (encore)
 
 - Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]`.
