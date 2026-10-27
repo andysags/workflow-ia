@@ -1,0 +1,1 @@
+{ "name": "fixture-paiement", "private": true, "type": "module", "scripts": { "build": "echo build" }, "dependencies": {} }

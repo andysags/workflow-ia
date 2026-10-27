@@ -18,6 +18,13 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 3. **Règle absolue** : aucun fait inventé. Pas de faux témoignages, de faux chiffres, de faux prix, de fausses adresses, de fausse urgence. Ce qui manque devient `[À COMPLÉTER : description précise]`. Vérifie tes claims avec `copywriting-kit:copy-proof-check`.
 4. SEO de chaque page : `title` (≤ 60 caractères), `meta description` (≤ 155), un seul H1, hiérarchie H2/H3, texte alternatif des images, slug d'URL. Pour un commerce local : données structurées `LocalBusiness` (JSON-LD) à partir des seules infos fournies.
 5. Textes légaux minimaux : mentions légales et politique de confidentialité, en gabarit avec `[À COMPLÉTER]`, adaptés au pays du brief. Signale qu'ils doivent être relus par le client.
+6. **Afrique francophone** : suis `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md`. Cela couvre :
+   - les prix en FCFA ;
+   - l'adresse avec quartier et repère ;
+   - les messages WhatsApp préremplis, écrits pour chaque bouton ;
+   - les mots locaux dans le SEO ;
+   - la loi et l'autorité de protection des données du pays dans la politique de confidentialité ;
+   - le conseil de créer la fiche Google Business Profile.
 
 ## Livrable : `04-contenu.md`
 

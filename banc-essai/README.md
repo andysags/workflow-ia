@@ -1,6 +1,6 @@
 # Banc d'essai
 
-Le banc d'essai fait passer **10 demandes de référence** dans le pipeline complet (`/workflow-ia:creer-site --auto`), puis compare les résultats. Il sert à savoir si une modification des agents améliore ou dégrade la qualité des sites.
+Le banc d'essai fait passer **11 demandes de référence** dans le pipeline complet (`/workflow-ia:creer-site --auto`), puis compare les résultats. Il sert à savoir si une modification des agents améliore ou dégrade la qualité des sites.
 
 ## Les cas
 
@@ -16,6 +16,7 @@ Le banc d'essai fait passer **10 demandes de référence** dans le pipeline comp
 | `eglise-porto-novo` | culte (horaires, événements) | Bénin |
 | `boutique-pagne-cotonou` | commerce (catalogue, commande WhatsApp) | Bénin |
 | `festival-jazz` | événement (landing page, billetterie) | Bénin |
+| `atelier-couture-lome` | formation (inscription payante, Mobile Money) | Togo |
 
 Pour ajouter un cas : un fichier `cas/<nom>.md`, avec un en-tête `secteur` et `pays`, puis la demande telle qu'un client l'écrirait.
 
@@ -24,10 +25,13 @@ Pour ajouter un cas : un fichier `cas/<nom>.md`, avec un en-tête `secteur` et `
 Depuis la racine du repo :
 
 ```bash
-banc-essai/lancer.sh                                  # les 10 cas
+banc-essai/lancer.sh                                  # les 11 cas
 banc-essai/lancer.sh restaurant-cotonou festival-jazz  # quelques cas
 PARALLELE=3 banc-essai/lancer.sh                      # 3 cas en même temps
+PLUGINS=/copie/plugins banc-essai/lancer.sh           # une copie figée des plugins
 ```
+
+Pour mesurer une version pendant que vous en modifiez une autre, copiez `plugins/` et passez la copie avec `PLUGINS`.
 
 Chaque cas tourne dans `banc-essai/resultats/<date>/<cas>/`, avec les plugins du repo (`--plugin-dir plugins`), donc **la version en cours de modification**, pas celle de la marketplace.
 
@@ -45,6 +49,7 @@ Pour régénérer un rapport sans relancer : `node banc-essai/rapport.mjs banc-e
 | QA, Sécurité, Critique, Vérif. | verdicts de `07`, `08`, `10`, `11` |
 | Perf mobile, Perf/A11y/SEO min, LCP max | `.qa/verification/mesures.json` (sinon `.qa/perf/`), mesures Lighthouse sur mobile ralenti |
 | À compléter | nombre de `À COMPLÉTER` dans les pages publiées |
+| Contacts | liens `wa.me` et `tel:` des pages publiées. Ils sont faux (❌) si le numéro n'est pas en chiffres internationaux ou si le texte du message est mal encodé |
 | Coût, Durée | session `claude -p` (`run.jsonl`), durée réelle |
 | Détail | agents lancés, erreurs d'outils, décisions prises automatiquement |
 
@@ -53,5 +58,20 @@ Un site est considéré comme **réussi** quand le build passe, que la sécurit�
 ## Limites
 
 - Les commandes autorisées sont limitées à une liste (voir `lancer.sh`). Une commande hors liste est refusée, ce qui compte dans les erreurs d'outils.
-- Les cas tournent sans jeton Netlify : le déploiement n'est pas testé.
+- Avec `NETLIFY_AUTH_TOKEN` défini, chaque cas est mis en ligne en brouillon (un site Netlify par cas). Sans jeton, le déploiement n'est pas testé.
 - Une seule exécution par cas donne une tendance, pas une certitude : l'IA ne produit pas deux fois le même site.
+
+## Tests ciblés par agent
+
+Le pipeline complet coûte plusieurs dollars par cas. Pour vérifier un seul agent, `tester-agent.sh` le lance sur une **fixture** : un petit dossier projet piégé, avec le résultat attendu.
+
+```bash
+banc-essai/tester-agent.sh                    # tous les tests
+banc-essai/tester-agent.sh securite-paiement  # un test
+```
+
+| Test | Agent | Ce qui est vérifié |
+|---|---|---|
+| `securite-paiement` | securite | Une page de paiement Mobile Money mal sécurisée est **bloquée**, et les 5 failles sont citées : clé secrète dans le navigateur, inscription confirmée sans vérification serveur, montant modifiable dans l'URL, CSP trop large, `innerHTML` |
+
+Pour ajouter un test : un dossier `agents/<test>/` avec `projet/` (le dossier donné à l'agent, jamais modifié : il est copié à chaque essai) et `attendu.md`. L'en-tête d'`attendu.md` contient : `agent`, `consigne`, `fichier` (le livrable à contrôler), `statut` (la ligne de statut attendue) et `mots` (des expressions régulières qui doivent apparaître dans le livrable).

@@ -15,7 +15,8 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 2. Si le plugin `product-management` est disponible, appuie-toi sur son skill `product-management:product-brainstorming` ; sinon applique la méthode ci-dessous.
 3. Identifie : le type de site (vitrine, landing page, portfolio, blog, petit catalogue…), la cible, l'objectif principal mesurable (réserver, appeler, acheter, s'inscrire…), les pages, les fonctionnalités, le ton, les contraintes (langue, pays, devise, accessibilité).
 4. Coupe sans pitié : le MVP contient seulement ce qui sert l'objectif principal. Le reste va dans « Plus tard ».
-5. N'invente aucun fait sur l'entreprise du client (prix, adresse, horaires, témoignages, chiffres). Ce qui manque devient une question ou un `[À COMPLÉTER : …]`.
+5. **Activité en Afrique francophone** : lis `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md`. Précise dans le brief le pays, le canal de contact principal (WhatsApp, appel, formulaire) et le **niveau de paiement** (0 : pas de paiement en ligne, 1 : lien de paiement, 2 : paiement intégré). Par défaut, choisis le niveau 0 pour un MVP. Ne pose la question du paiement que si l'activité vend en ligne (boutique, billetterie, inscription payante, don).
+6. N'invente aucun fait sur l'entreprise du client (prix, adresse, horaires, témoignages, chiffres). Ce qui manque devient une question ou un `[À COMPLÉTER : …]`.
 
 ## Si la demande est trop floue
 
@@ -33,7 +34,7 @@ Si `01-reponses.md` n'existe pas encore et qu'il manque des informations qui cha
 ## Hors MVP (plus tard)
 ## Ton et marque
 ## Contenus fournis / à compléter
-## Contraintes          (langue, pays, accessibilité, légal : mentions légales, cookies)
+## Contraintes          (langue, pays, devise, canal de contact, niveau de paiement, accessibilité, légal : mentions légales, cookies)
 ## Critères de réussite du MVP
 ```
 

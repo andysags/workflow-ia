@@ -103,6 +103,21 @@ Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils 
 
 Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le designer), les contrôles sont proportionnés à la modification (la Sécurité intervient dès que du code, un formulaire ou une dépendance change), et le site est remis en ligne **au même endroit**. Chaque modification est notée dans `12-modifications.md`, et peut être annulée.
 
+## Pensé pour l'Afrique francophone
+
+Quand votre activité est au Bénin, au Togo, en Côte d'Ivoire, au Sénégal ou ailleurs en Afrique francophone, l'équipe applique un **pack local** ([`afrique.md`](plugins/workflow-ia/skills/creer-site/references/afrique.md)) :
+
+- **WhatsApp et appel d'abord** : boutons « WhatsApp » et « Appeler » toujours visibles sur mobile, messages préremplis (« Bonjour, je voudrais réserver… »), formulaires qui ouvrent la conversation WhatsApp sans stocker de données.
+- **Mobile Money, en trois niveaux** :
+  - **0** : paiement sur place ou après confirmation par WhatsApp. C'est le choix par défaut.
+  - **1** : lien de paiement FedaPay ou KkiaPay.
+  - **2** : paiement intégré avec vérification obligatoire côté serveur.
+
+  La Sécurité bloque toute mise en ligne où une clé secrète serait visible, ou une commande confirmée sans vérification.
+- **Prix en FCFA** bien écrits, **adresse avec quartier et repère**, données structurées pour Google, et conseil de créer votre fiche Google Business Profile.
+- **Connexions lentes** : moins de 500 Ko par page, photos allégées, pas de carte ni de vidéo chargée d'office.
+- **Textes légaux** : modèles de mentions légales et de politique de confidentialité qui citent la loi et l'autorité de protection des données de votre pays (APDP, ARTCI, CDP…), à faire relire.
+
 ## Ce qui se passe
 
 | Étape | Agent | Ce qu'il produit | Votre rôle |
@@ -120,7 +135,7 @@ Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le de
 
 **Mode premium :** ajoutez `--premium` pour que le designer, le développeur, la sécurité et la critique travaillent avec le modèle le plus puissant (Opus). La qualité est meilleure, mais le coût est environ doublé. Par défaut, chaque agent utilise un modèle adapté à sa tâche (Sonnet, Haiku pour la mise en ligne), quel que soit le modèle de votre session.
 
-**Coût et durée indicatifs :** environ 5 $ et 25 à 35 minutes par site, mesurés sur le banc d'essai avant les optimisations de la version 0.3.
+**Coût et durée indicatifs :** environ 4,50 à 6,50 $ et 20 à 40 minutes par site selon le nombre de pages, mesurés sur le banc d'essai (versions 0.4.3 et 0.5.0). Une modification avec `/workflow-ia:modifier-site` coûte en général moins de 2 $.
 
 Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
 
@@ -141,7 +156,7 @@ Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
 
 ## Qualité mesurée
 
-Le dossier [`banc-essai/`](banc-essai/README.md) fait passer 10 demandes de référence (restaurant, salon, ONG, avocat, école, artisan, photographe, paroisse, boutique, festival) dans le pipeline complet, et compare les sites obtenus : build, verdicts, performance mobile, accessibilité, coût.
+Le dossier [`banc-essai/`](banc-essai/README.md) fait passer 11 demandes de référence (restaurant, salon, ONG, avocat, école, artisan, photographe, paroisse, boutique, festival, atelier payant) dans le pipeline complet, et compare les sites obtenus : build, verdicts, performance mobile, accessibilité, liens WhatsApp et téléphone, coût. Des **tests ciblés par agent** (`banc-essai/tester-agent.sh`) vérifient un agent seul sur un cas piégé, pour quelques centimes.
 
 ## Contenu du repo
 

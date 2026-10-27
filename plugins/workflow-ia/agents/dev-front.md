@@ -21,8 +21,15 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 4. Formulaires : Netlify Forms (`data-netlify="true"`, champ `form-name`, honeypot `netlify-honeypot`) sauf mention contraire de l'architecture.
 5. Polices : héberge-les dans le site avec les paquets `@fontsource/<police>` (ou `@fontsource-variable/<police>`), importés dans le layout. Pas de lien vers Google Fonts : c'est plus rapide, compatible avec la CSP et sans transfert de données personnelles. Vérifie dans le build que les fichiers de police sont bien présents dans `dist/`.
 6. Images : si `sources/medias/` contient des photos du client (voir la section « Médias » de `00-faits.md`), copie celles qui servent dans `site/src/assets/` et affiche-les avec le composant d'image optimisée du framework (`<Image>` d'`astro:assets` : WebP, tailles adaptées, `loading="lazy"` sauf l'image principale, largeur et hauteur fixées pour éviter les décalages). Texte alternatif de `00-faits.md`. **Jamais dans `public/`** (rien n'y est optimisé), même si le code existant y range ses images : déplace-les dans `src/assets/`. Ne redimensionne ni ne convertis rien toi-même (`convert`, `identify`, `sharp` en ligne de commande) : le build Astro s'en charge. Remplace d'abord les emplacements existants (`TODO image client`, texte « photo à venir »), en commençant par celui de l'image principale de l'accueil, avant d'ajouter une galerie. Après le build, vérifie que `dist/_astro/` contient des `.webp` et qu'aucune photo de plus de 300 Ko n'est servie. Sinon, place-holders légers (SVG ou dégradés) avec un commentaire `TODO image client`. Ne télécharge jamais d'images depuis internet.
-7. Ajoute `netlify.toml` (commande de build, dossier publié, en-têtes de sécurité : `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`).
-8. Lance `npm run build` jusqu'à ce qu'il passe sans erreur. Corrige la cause, jamais en désactivant un contrôle.
+7. **Afrique francophone** : suis `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md`. Cela couvre :
+   - les liens `wa.me` (numéro en chiffres seulement, texte encodé une fois) et `tel:` ;
+   - la barre d'action fixe sur mobile ;
+   - le format des prix en FCFA ;
+   - le JSON-LD `LocalBusiness` ;
+   - le budget de 500 Ko par page ;
+   - le niveau de paiement de l'architecture. Au niveau 2, le widget n'utilise que la clé publique, et la CSP n'autorise que les domaines du prestataire.
+8. Ajoute `netlify.toml` (commande de build, dossier publié, en-têtes de sécurité : `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`).
+9. Lance `npm run build` jusqu'à ce qu'il passe sans erreur. Corrige la cause, jamais en désactivant un contrôle.
 
 ## Mode correction
 
