@@ -51,7 +51,14 @@ cd workflow-ia
 claude
 ```
 
-Acceptez la confiance du dossier. Les marketplaces sont alors enregistrées automatiquement, mais il faut toujours installer le plugin avec la commande `/plugin install workflow-ia@workflow-ia`.
+Dans Claude Code, enregistrez le dossier cloné comme marketplace, puis installez le plugin :
+
+```
+/plugin marketplace add ./
+/plugin install workflow-ia@workflow-ia
+```
+
+Avec cette variante, vos modifications des agents sont prises en compte après un `/reload-plugins`, ce qui est pratique pour adapter l'équipe à vos besoins.
 
 ### 4. Jeton Netlify (pour la mise en ligne)
 
