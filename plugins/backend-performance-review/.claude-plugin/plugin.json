@@ -1,0 +1,22 @@
+{
+  "name": "backend-performance-review",
+  "description": "Evidence-first, workload-driven backend performance review methodology for AI coding agents. Technology-agnostic core with pluggable database and runtime references.",
+  "version": "2.0.0",
+  "homepage": "https://github.com/Sanoy24/backend-performance-review",
+  "repository": "https://github.com/Sanoy24/backend-performance-review",
+  "license": "MIT",
+  "author": {
+    "name": "Sanoy24",
+    "url": "https://github.com/Sanoy24"
+  },
+  "keywords": [
+    "performance",
+    "backend",
+    "code-review",
+    "database",
+    "latency",
+    "throughput",
+    "profiling"
+  ],
+  "skills": ["./skills"]
+}

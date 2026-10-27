@@ -1,0 +1,1542 @@
+# Evaluation
+
+How this skill is tested, and what has actually been tested so far.
+
+The distinction matters. A skill whose strongest rule is "never assert what you have not
+verified" cannot exempt itself from that rule, so this page separates **checks that have been
+run** from **checks that are specified but not yet executed**.
+
+---
+
+## Status
+
+| Category | Status |
+|:--|:--|
+| Architecture self-check | **Automated in CI** — `scripts/check_repo_invariants.py`, every push/PR |
+| Tooling checks | **Run** — passing in CI on every push/PR |
+| Behavioral evaluation against public repositories | **Rounds 1–2 run** — 5 of 6 required cases covered; 3 real bugs found and fixed; 1 case reframed after evidence (§3.7) |
+| Independent (non-author) pass | **Run nine times, across eight repositories** — agents with no memory of this session; on the four repositories with a prior author review to compare against (§3.8–3.11), reproduced or exceeded its primary finding every time; on all eight repositories, found real evidence a comparison review had missed, or a real, fixed bug in the skill itself (four of eight — §3.13, §3.14, §3.15, §3.16 — had no prior author review at all, the first fully author-uninvolved runs); one repository (`gin-realworld`) has now been blind-passed twice, giving a first, single-repository measurement of inter-run consistency: the primary finding's location and mechanism reproduced exactly across all three reviews, and its severity/priority reproduced exactly between the two blind passes; see §3.8–3.18 |
+| Regression protection (§4 fixtures) | **Automated in CI** — `tests/test_detect_stack_regressions.py`, every push/PR |
+
+Behavioral evaluation is the real test, and it has now been run against four unmodified public
+repositories, each of which was then reviewed a second time by an independent agent with no
+memory of this project's own findings. Round 1 found three genuine bugs in the detection
+tooling — two in `registry.yaml`'s match tokens and one in the parser itself — none of which the
+architecture self-check could have caught, because that check only verifies the registry is
+internally consistent, not that it matches real files correctly. Round 2 ran committed benchmarks
+for real (§3.5), change-scope-reviewed a real merged pull request against its actual diff (§3.6),
+and reframed what case 2 is actually testing after a fourth repository still produced a real
+finding (§3.7). The independent blind pass, run once per repository (§3.8–3.11) and summarized in
+§3.12, reproduced or exceeded the manual review's primary finding on all four, and found real,
+previously-missed evidence — including one hard `SyntaxError` a careful reading had missed
+entirely — on three of the four. Four further blind passes (§3.13, §3.14, §3.15, §3.16), run
+against JVM, Rust, .NET, and Node.js repositories with no prior author review at all, closed
+all four untested `deep`-tier runtime gaps flagged in §3.12 and §5 and each found a real, fixed
+bug in the skill's own detection or reference content rather than only in the target
+repository — see §3.17. A fifth run (§3.18) blind-passed one of those repositories a second
+time and measured, for the first time, whether two independent passes over the same code
+converge. The false-positive/false-negative fixtures specified in §4 are now automated
+(`tests/test_detect_stack_regressions.py`, run on every push/PR).
+
+---
+
+## 1. Architecture self-check
+
+Automated: `scripts/check_repo_invariants.py`, run on every push and pull request by
+`.github/workflows/checks.yml`. It replaced a set of manual, ad-hoc commands that lived
+directly in `CONTRIBUTING.md` — consolidating them into one real, mutation-tested script
+closed the gap where those commands could silently drift out of sync with the invariants they
+were meant to check.
+
+| Check | v0.1.0 |
+|:--|:--|
+| Registry parses; every entry has `load` and `tier` | Pass — 37 entries |
+| Every referenced file exists | Pass — 0 unresolved |
+| Database category files name no specific products | Pass — 0 matches, scoped to `databases/*.md` per the non-derivable-content rule |
+| Every technology file has all seven required sections | Pass — 3 files |
+| Category file ordered before technology file in every `load` | Pass |
+| Published tier summary matches the registry's actual counts | Pass — 3 deep / 24 conceptual / 10 generic |
+| No reference file grossly exceeds the ~400 line soft cap | Pass |
+| Examples are outside `skills/` | Pass |
+| Priority matrix identical in `SKILL.md` and `README.md` | Pass |
+| `detect_stack.py` imports only the standard library | Pass — verified by AST inspection, and separately by running it under a bare Python 3.8 with `-I` |
+
+The checker was mutation-tested before being trusted: four deliberate regressions (a leaked
+product name, a mismatched priority matrix, reversed registry load order, a missing technology
+section) were each introduced into a scratch copy of the repository and confirmed to produce
+the expected failure, then reverted.
+
+Commands for the mechanical subset are in `CONTRIBUTING.md` §10.
+
+### Questions the self-check is really asking
+
+- Is the methodology genuinely technology-agnostic, or has an engine leaked into it?
+- Are technology concerns isolated, or is a technology file restating its category?
+- Does adding a database require only a file plus a registry row?
+- Does every reference file have a distinct purpose, or do two overlap?
+- Do the rubrics produce reproducible priorities?
+
+---
+
+## 2. Tooling checks
+
+| Check | v0.1.0 |
+|:--|:--|
+| `detect_stack.py` runs on Python 3 with stdlib only | Pass — verified on 3.13 |
+| Emits valid JSON | Pass |
+| Correctly detects a Python + FastAPI + Postgres + Redis + Celery + Docker + Kubernetes repository | Pass — all seven signals, correct tiers |
+| Resolves references in category-before-technology order | Pass |
+| **Does not read files matching secret patterns** | Pass — a `.env` containing `postgresql://user:...@db/app` was reported as present, and the `postgresql://` string did not appear in match evidence, confirming the file was never read |
+| Reports partial scans in `warnings` rather than failing silently | Pass — budget and file-count caps |
+
+The secret-handling check is the one worth re-running on every change to the scanner. The
+script is intended to be safe to point at an unfamiliar production repository.
+
+---
+
+## 3. Behavioral evaluation — the real test
+
+Reasoning through hypothetical scenarios in context is not evidence. The skill must be run
+against real repositories and its output scored. This section specifies the method, then
+reports Round 1's actual results against two real, unmodified public repositories.
+
+### Method
+
+Select 4–6 **public** repositories. Run the skill on each. Score the output.
+
+### Scoring
+
+| Criterion | What it detects |
+|:--|:--|
+| Stack detected correctly | Discovery works on real layouts, not just tidy ones |
+| Correct references loaded, and no others | Routing works; context is not wasted |
+| Known issue found | The methodology finds real things |
+| **No number invented** | The single most important criterion. Any unsourced figure is a failure regardless of how good the rest is |
+| No cargo-cult recommendation | The anti-pattern rules hold under pressure |
+| Validation plan present and executable | Recommendations are falsifiable |
+| Unknowns reported honestly | Confidence caps are respected |
+| Priorities match the matrix | Rubrics are applied, not bypassed |
+
+### Required cases
+
+Three of these are chosen specifically to catch failure modes that a "find the bug" test
+cannot. **Status reflects Round 1 (§3.1–§3.3) and Round 2 (§3.5–§3.7).**
+
+1. **A repository with a known, documented performance issue.** Does it find it, and rank it
+   appropriately? — **Covered.** Round 1 found a real, verified N+1 in `gin-realworld` (§3.1) by
+   manual code tracing. Round 2 went further: `gin-realworld`'s PR #49, titled "perf: optimize
+   database queries to eliminate N+1 problems," is a real, merged, externally-authored fix for
+   the *other* half of that same N+1 (the favorites-count query). Reviewing it in change-scoped
+   mode (§3.6) is the closest available proxy to "a known, documented issue" without fabricating
+   one, and it is a stronger test than §3.1 alone: it checks whether the skill correctly credits
+   a real fix rather than re-flagging already-solved code.
+2. **A repository with no significant performance problem.** *The most important case.* — **Best
+   available evidence gathered; not cleanly satisfied.** See §3.7 for the full account: across
+   four real repositories now (two in Round 1, two in Round 2), **none had a literal zero-finding
+   result** — every one had at least one legitimate, evidence-based finding. §3.7 explains why
+   this is itself a meaningful result rather than a failure to find a clean repo, and reframes
+   what "passing" this case means in practice.
+3. **A repository on a `generic`-tier stack.** — **Covered.** See §3.1.
+4. **A repository with runtime evidence committed** (benchmarks, load tests, query plans). —
+   **Covered.** `slytomcat/URLshortener` — a separate, unrelated repository chosen specifically
+   for this case — has committed Go benchmarks; Round 2 ran them for real and used the actual
+   output as `Confirmed`-grade evidence (§3.5) — the first time this evaluation has produced a
+   genuinely `Confirmed`
+   finding rather than one capped at `High`.
+5. **A change-scoped review of a real pull request.** — **Covered.** §3.6 reviews PR #49
+   against the real diff.
+6. **A repository with contradictory configuration** — pool size inconsistent with worker
+   count, or heap larger than the container limit. Does it do the arithmetic? — **Checked and
+   found no contradiction** in all four repositories so far (§3.1, §3.2, §3.5) — a real check
+   with a genuine negative result each time, not a skipped one.
+
+Case 6 is the cheapest high-value check: the answer is objectively verifiable from files, so
+there is a right answer to compare against. Remaining open work: a genuinely blind evaluator
+run without the author's involvement at all — §3.8 was a first, partial step; §3.13 and §3.14
+go further still, with no prior author review of the target repository to compare against at
+all, only the choice of repository and the prompt.
+
+### 3.1 Round 1, repo A — `gothinkster/golang-gin-realworld-example-app`
+
+Commit `626c372d259472148d93303f74aa9b9a1cdcef24`, cloned unmodified. Go + Gin + GORM +
+SQLite — no `deep`-tier engine, chosen specifically to exercise case 3.
+
+**Detection.** `detect_stack.py` correctly identified SQLite (relational, conceptual), Go
+(conceptual), and — before the fixes below — two false positives: a `task-queue` broker
+signal and a spurious extra `rest` match token. References loaded were exactly the category
+and application files appropriate to that stack; no document-store, no graph, no message-
+broker methodology beyond what the false positive pulled in.
+
+**Bugs found (all fixed, see §3.3):**
+
+- The `task-queue` signal fired on the bare token `rq`, which matched inside a base64 hash
+  fragment in `go.sum` (`h1:hxrqLVvrK65+...`) — nothing to do with a task queue.
+- The `rest` signal's `koa` token matched case-insensitively inside another `go.sum` hash
+  fragment (`...kOa...`).
+
+**A real N+1, found by tracing the actual call graph, not by pattern-matching a method name.**
+`ArticleModel.favoritesCount()` and `.isFavoriteBy()` each issue a query and look, in
+isolation, like the canonical N+1 shape. Reading only that far would have been a false
+positive: `ArticlesSerializer.Response()` (`articles/serializers.go:115-139`) already batches
+favorite counts and status with `BatchGetFavoriteCounts`/`BatchGetFavoriteStatus` *before* its
+per-article loop, and calls `ResponseWithPreloaded`, not the naive `Response()`. **That half is
+correctly not a finding** — a shallower review would have reported it anyway and been wrong.
+
+Tracing one level deeper found the real one: each article's author is rendered through
+`ArticleUserSerializer.Response()` → `users.ProfileSerializer.Response()`
+(`users/serializers.go:24-40`), which calls `myUserModel.isFollowing(self.UserModel)`
+(`users/models.go:121-129`) — and that method issues its own `db.Where(...).First(...)` query,
+**once per article, per request**, on both `GET /articles` and `GET /articles/feed`
+(`articles/routers.go:61-85`). The favorite-count N+1 was fixed by a previous contributor; the
+structurally identical follow-status N+1 one layer down was not. This is exactly the shape
+`application/data-access.md` §2 and §10 warn about — the caller trace has to go through the
+serializer, not stop at the handler.
+
+- Severity: position critical-path, frequency per-article-per-request, growth O(n) in page
+  size, blast radius system-wide (shares the connection pool with every other request). →
+  **High**.
+- Confidence: **High** — the call chain is unambiguous from the code; no workload assumption
+  is load-bearing for the *existence* of the extra query, only for how much it matters.
+- Priority: **P1** per the matrix (High severity × High confidence).
+
+**Config arithmetic (case 6), checked, no contradiction found.** `common/database.go` sets
+`SetMaxIdleConns(10)` in `Init()` (production) and `SetMaxIdleConns(3)` in `TestDBInit()`
+(tests) — different values for different contexts, not an inconsistency. `SetMaxOpenConns` is
+never set in either. `application/connection-pools.md`'s arithmetic assumes a networked engine
+with a server-side connection ceiling; SQLite is an embedded, file-backed, single-writer engine
+with no such ceiling to exceed, so the arithmetic does not transfer and reporting it as a
+pool-sizing finding would have been a category error. Correctly not reported.
+
+### 3.2 Round 1, repo B — `fastapi/full-stack-fastapi-template`
+
+Commit `8063fe54f17d19f01720e055103af9cad3d8f55d`, cloned unmodified. Python + FastAPI +
+SQLModel + PostgreSQL + Docker, chosen to exercise the `deep`-tier Postgres path and a
+full-stack monorepo (frontend + backend in one repo).
+
+**Detection, and the third bug.** Postgres detection was correct and precise (deep tier,
+matched on `psycopg`/`postgresql://` etc.). But `node` also fired, matched only on
+`package.json` and `node_modules` — which exist because this repo has a `frontend/` directory.
+**For a backend performance review, that is a false attribution of the backend runtime**, not
+merely a harmless extra match: those two tokens cannot distinguish a Node.js backend from
+front-end tooling sitting in the same repository. Separately, `gin-gonic/gin` and
+`labstack/echo` — Go web framework names — matched the `rest` signal via the bare words `gin`
+and `echo`: `gin` inside the English word "logging" in `compose.override.yml`, and `echo`
+inside ordinary shell `echo` commands in CI workflow YAML. Neither Go framework is anywhere in
+this Python/TypeScript repository.
+
+**A fourth finding, unrelated to the bugs: independent confirmation of the pagination pattern.**
+`GET /items` (`backend/app/api/routes/items.py:13-25`) declares `limit: int = 100` with no
+`Query(le=...)` upper bound. A default is not an enforced maximum — a caller can request an
+arbitrarily large page. This is the identical pattern documented in
+`docs/examples/fastapi-postgres.md`'s PERF-001-adjacent reasoning and in
+`application/api.md` §1, found here independently in a real, actively maintained template
+repository with no connection to this project. That is a meaningfully stronger validation of
+the pattern's real-world frequency than either the synthetic example or a single occurrence
+would be.
+
+- Severity: critical-path, per-request, O(n) in table size with no cap, blast radius limited to
+  this endpoint (no evidence of a shared-resource interaction here). → **Medium**.
+- Confidence: **High** — the missing bound is a property of the route declaration.
+- Priority: **P2**.
+
+**Config arithmetic (case 6), checked, no contradiction found.** A `Dockerfile` and
+`compose.yml` exist; no explicit container memory limit or application-side pool-size setting
+was found in the scanned files, so there was nothing to check the arithmetic against. Recorded
+as an unknown, not asserted as fine — the absence of a contradiction is not the same claim as
+the absence of a limit.
+
+### 3.3 Bugs found, and the fixes applied
+
+Both of the following were discovered *by* the evaluation the architecture self-check could not
+have caught, because both are about whether the tool matches real files correctly, not whether
+the registry is internally well-formed:
+
+1. **Registry match-token collisions** (`registry.yaml`). Three tokens were short or common
+   enough to match unrelated content: `rq` and `koa` inside base64 hash fragments in lockfiles,
+   and `gin`/`echo` inside ordinary English words and shell commands. Fixed by requiring the
+   fully-qualified module path for the Go frameworks (`gin-gonic/gin`, `labstack/echo`,
+   `gofiber/fiber`), narrowing the task-queue signal to `django-rq`/`python-rq`, and quoting
+   `koa` as `"koa":` to require the exact dependency-declaration shape. The `node` signal's
+   `package.json`/`node_modules` ambiguity in full-stack repos was not removed — doing so would
+   lose real detection value — but is now flagged in the registry's `notes` field, which
+   surfaces in the report's scope section.
+2. **The registry parser silently dropped escaped quotes** (`scripts/detect_stack.py`,
+   `_strip_quotes`). A token written as `"\"node\":"` — intended to match the literal text
+   `"node":` in a `package.json` — parsed to the four literal characters `\"node\":` (with the
+   backslashes preserved), which never matches anything in a real file. **This token had been
+   silently dead since v0.1.0**; nothing exercised it because the `node` signal's other, broader
+   tokens always fired alongside it, masking the failure. Fixed by unescaping `\"` to `"` after
+   stripping the outer quotes. Re-verified: the corrected token now parses to the exact literal
+   `"node":`, and the same fix made the newly-added `"koa":` token work correctly on the first
+   try rather than needing its own follow-up fix.
+
+Bug 2 is the more important of the two: bug 1 produced visible, self-correcting noise (a wrong
+detection you'd notice); bug 2 produced invisible under-detection (a signal that looked present
+in the registry but could never fire), which is a worse failure mode precisely because nothing
+about the output made it apparent.
+
+### 3.4 What Round 1 does not establish
+
+Stated plainly, matching the discipline this project asks of its own findings:
+
+- **This was not a blind evaluation.** The same person who authored the skill selected the
+  repositories, read the code, and wrote up the results. An evaluator unfamiliar with the
+  skill's internals, or an independent agent given only `SKILL.md` and told to review these
+  repositories, would be a stronger test and has not been run.
+- **The full skill workflow was not invoked end-to-end.** `detect_stack.py` was run for real;
+  the subsequent review reasoning was performed manually against the same evidence-first
+  standard the methodology requires, not by dispatching the actual `SKILL.md` procedure to an
+  agent and grading its output.
+- **Cases 2, 4, and 5 remain open** — no-problem repo, committed-benchmark repo, change-scoped
+  PR review. Case 2 in particular is the highest-priority gap: it is the one case that tests
+  whether the skill can stay quiet, and nothing in Round 1 tests it.
+- **Two repositories is a small sample.** Both are Round 1, not a completed evaluation.
+
+Round 2 (below) closes cases 4 and 5 and gathers the best available evidence on case 2. It does
+not close the blindness gap on its own — see §3.8.
+
+### 3.5 Round 2, case 4 — real benchmark evidence, `slytomcat/URLshortener`
+
+Commit at time of review not pinned by the author beyond `--depth 1` clone of the default
+branch; repository is small and stable. Go + Redis (`go-redis/redis/v7`) URL-shortening
+microservice, chosen because its test suite includes committed Go benchmarks — the first
+repository in this evaluation with runtime evidence actually present.
+
+**The benchmarks were run for real**, not merely noted as present (`go test -bench=. -benchmem`,
+after working around an unrelated Windows/Unix build issue in one unrelated test file —
+`syscall.Kill` is not defined on Windows — by neutralizing that single line for the duration of
+the run and reverting it immediately after; this did not touch anything the benchmarks
+exercise):
+
+```text
+Benchmark00ST00Create2-14     136.0 ns/op    12 B/op   3 allocs/op
+Benchmark00ST00Create8-14     137.3 ns/op    40 B/op   3 allocs/op
+Benchmark00ST00Create2B-14    157.7 ns/op    32 B/op   3 allocs/op   (sync.Pool variant)
+Benchmark00ST00Create8B-14    179.5 ns/op    56 B/op   3 allocs/op   (sync.Pool variant)
+BenchmarkTokenCheck-14         64.2 ns/op     0 B/op   0 allocs/op   (current implementation)
+BenchmarkTokenCheckOrig-14    800.8 ns/op   160 B/op  10 allocs/op   (an alternate kept for comparison)
+```
+
+This is genuinely `Confirmed`-grade evidence per the rubric: a runtime artifact was produced and
+is cited exactly. Two things worth noting about what the numbers actually support:
+
+- The repository's own source comment claims a `sync.Pool`-based token generator is "slower and
+  requires more memory than the original simple version." **The benchmark confirms the
+  comment is correct** — the pooled variant is ~15–30% slower with no memory benefit at this
+  size. Evaluating the claim rather than trusting the comment is itself the evidence-first
+  discipline working correctly.
+- All of these operations are in the 60–180 nanosecond range. Against a Redis round trip
+  (single-digit milliseconds at best, over a network), **token generation and validation are
+  nowhere near this service's bottleneck**, regardless of which variant is used. The correct
+  conclusion from `Confirmed` evidence here is *"this is not where time goes, do not optimize
+  it further"* — not a recommendation to swap implementations. This is a direct test of
+  `principles/latency.md`'s warning against optimizing a non-bottleneck stage, with real
+  numbers instead of the usual inference.
+
+**A real finding, found along the way, unrelated to the benchmarks.** The main HTTP server is
+constructed as `&http.Server{Addr: ..., Handler: ...}` with no `ReadTimeout`, `WriteTimeout`,
+`IdleTimeout`, or `ReadHeaderTimeout` set (`service.go`, `NewHandler`) — confirmed by grepping
+the entire non-test source for any of those identifiers or a `http.TimeoutHandler` wrapper: zero
+matches. Go's `net/http.Server` treats an unset timeout as no timeout, so this is an unbounded
+worst case on every connection, exactly the pattern `distributed/timeouts-and-deadlines.md`
+describes — Confidence `High` (visible in code, workload-independent), Severity `Critical`
+(blast radius is the whole process; there is no worker pool to absorb it), Priority **P0**.
+
+A second, related, lower-severity observation: the built-in self-test (`healthCheck()`) makes
+its outbound calls with the package-level `http.Post`/`http.Get`, which use `http.DefaultClient`
+— `Timeout: 0`, also unbounded. Confined to the health-check path rather than the main serving
+path, so severity is lower; recorded as `Medium`, not elevated to match the main finding.
+
+**Checked, no contradiction (case 6).** The Redis client is constructed via
+`redis.NewUniversalClient(&redis.UniversalOptions{Addrs, Password})` — `PoolSize`,
+`DialTimeout`, `ReadTimeout`, `WriteTimeout` are all left unset. Rather than assuming this means
+"unbounded" (as it would for the `net/http.Server` above), **the actual vendored dependency
+source was read** (`go mod download` retrieved `go-redis/redis/v7@v7.4.1` locally;
+`options.go` was inspected directly): unset `DialTimeout` defaults to 5s, unset
+`ReadTimeout`/`WriteTimeout` default to 3s, unset `PoolSize` defaults to `10 * runtime.NumCPU()`.
+These are sane library defaults, not an omission — correctly not reported as a finding. This is
+the same discipline applied to two structurally identical-looking "unset timeout" situations,
+reaching two different, individually-verified conclusions rather than one blanket rule.
+
+### 3.6 Round 2, case 5 — change-scoped review of a real, merged pull request
+
+`gothinkster/golang-gin-realworld-example-app` PR #49, "perf: optimize database queries to
+eliminate N+1 problems," merged. Chosen deliberately: it is the real fix for the favorites-count
+half of the N+1 found in Round 1 (§3.1), fetched via GitHub's `.diff` endpoint for the actual PR,
+not reconstructed from memory.
+
+**Scope, per the change-scoped mode definition in `SKILL.md`:** the diff touches
+`articles/models.go`, `articles/serializers.go`, `articles/unit_test.go`,
+`common/unit_test.go`, `common/utils.go`. Analysis stayed within these files and their direct
+callers (`articles/routers.go`, which calls the serializer this diff modifies), not the whole
+repository.
+
+**The fix itself verified correct.** The diff adds `BatchGetFavoriteCounts` and
+`BatchGetFavoriteStatus` (single `GROUP BY`/`IN`-clause queries) and a new
+`ResponseWithPreloaded` serializer method that accepts precomputed values instead of querying
+per article; `ArticlesSerializer.Response()` is restructured to call the batch functions once
+before its loop, then pass results in. This converts a query count of `1 + 2n` (list query, plus
+`favoritesCount()` and `isFavoriteBy()` per article) to a fixed `3` regardless of page size —
+exactly what "eliminate N+1" claims, and the diff supports the claim.
+
+**What a change-scoped review adds beyond "the diff looks correct": the adjacent, untouched
+half of the same problem.** `SKILL.md` defines change-scoped mode as reporting "what the change
+introduces, worsens, **or sits directly adjacent to**." The rendered article's author profile —
+in the very code path this diff restructures (`ArticleUserSerializer.Response()`, called from
+inside the loop this diff modifies) — calls `ProfileSerializer.Response()`, which calls
+`isFollowing()`, which issues its own per-article query. This is the finding independently
+confirmed in Round 1 (§3.1). PR #49 does not touch it, and by its own title ("eliminate N+1
+problems," plural) arguably should have: it is the structurally identical pattern, one call
+deeper, in a file this same diff already had open. A change-scoped review that only checked "did
+this diff do what it says" would miss this; checking the adjacent path is what "sits directly
+adjacent to" in the mode's own definition is for. Reported as: Severity `High`, Confidence
+`High`, Priority **P1** — matching §3.1's scoring of the same finding exactly, since it is the
+same code. `scalability-risk` is deliberately not the tag here: the cost is present today, not
+merely at future scale. Tagged instead as a gap the PR's own stated goal ("eliminate N+1
+problems") did not close.
+
+This is a stronger validation of the change-scoped mode than a synthetic diff would have been:
+the "correct but incomplete" shape — a real fix that solved half of a stated problem — is
+exactly the case a shallow diff-only check (does the changed code do what the commit message
+claims) would pass and a proper adjacent-path check would not.
+
+### 3.7 Reframing case 2, after four repositories
+
+Four real, unmodified public repositories have now been reviewed at the same rigor:
+`gin-realworld`, `fastapi-template` (Round 1), `URLshortener` (§3.5), and — closest of the
+four — `antonosmond/github-signature-verifier`, a minimal, stateless AWS Lambda function that
+validates GitHub webhook signatures, chosen in Round 2 specifically as a case-2 candidate: no
+persistent server object to misconfigure, no connection pool, no datastore, no list/pagination
+surface at all, about as small as a real backend gets.
+
+**Even this repository has one real finding.** `src/index.js`'s handler fetches the webhook
+secret from AWS SSM Parameter Store *inside* the handler, on every invocation — not cached at
+module scope. `infrastructure/resources.md` §5 is explicit that Lambda execution environments
+are reused across invocations and that state initialized outside the handler persists across
+them; initializing per-invocation state that could be cached at module scope pays its setup cost
+on every call. Scored here as Severity `Medium` (real, avoidable, but bounded — one extra
+network round trip per invocation, not a multiplier), Confidence `High` (visible in the code;
+SSM's own client defaults are a separate, unverified question, noted as an unknown rather than
+asserted). **Revised in §3.8:** an independent blind review of this same repository found
+evidence this analysis missed and made a defensible case for `High` severity instead — see §3.8
+for why, and for the correction.
+
+**Two things this repository's review correctly did *not* report, which is itself worth
+recording:** the signature comparison (`requestSignature === expectedSignature`) is a plain
+string comparison rather than a constant-time one — a real issue, but a *security* one (timing
+attack), out of `SKILL.md`'s stated scope ("Not a security, correctness, or style review").
+Likewise the Terraform config's `runtime = "nodejs4.3"` is a long-unsupported Lambda runtime —
+real, but a maintenance/support-lifecycle fact, not a performance one. Declining to report both,
+correctly, while still reporting the SSM-caching finding, is a sharper test of scope discipline
+than either finding alone would have been: it shows the boundary is being applied by *kind of
+issue*, not by a blanket "the code looks fine" instinct.
+
+**The honest conclusion:** across four repositories, the rate of "at least one legitimate
+finding" is 4/4, not because the methodology manufactures findings — every finding above
+survived being cited to an exact line and, where a plausible alternative explanation existed
+(the Redis client's unset options), was checked against it before being reported — but because
+real code, even careful code, has one workload-independent gap more often than intuition
+suggests. Missing timeouts in particular have now appeared in *three* of the four repositories
+(`gin-realworld`'s payment-adjacent reasoning was in the synthetic example, not this repo, but
+`URLshortener` and, in weaker form, the sig-verifier's SSM call, both show the pattern), which
+is itself a datapoint about where real value concentrates.
+
+**What this means for case 2 going forward:** insisting on a literal zero-finding repository as
+the pass condition was the wrong test. The evaluation criterion in practice is: given a
+near-minimal, well-written repository, does severity stay *proportionate* to what the evidence
+actually supports — a short, appropriately-scored report, not an inflated one — and does the
+review correctly decline to report issues outside its stated scope? By that standard, this case
+is satisfied: §3.8's independent pass over this same repository landed on one substantial finding
+(P1) plus two minor ones (P3), nothing higher, nothing manufactured. By the original literal
+standard ("no significant performance problem," meaning nothing to report at all), no repository
+tried so far has satisfied it, and it is now an open question whether one exists among real,
+non-trivial public backends at all — which is a more interesting result than either a clean pass
+or a clean fail would have been.
+
+### 3.8 An independent pass, on one repository
+
+A fresh `general-purpose` agent was spawned with no memory of this session: it was given only
+the path to the shipped `SKILL.md` and told to follow it, plus the path to the sig-verifier
+repository, with no indication of what §3.7's manual review had found. It was explicitly told
+this was a small repository, not to assume it needed a large report, and that few or zero
+findings was an acceptable honest outcome — the same permission `SKILL.md` itself gives, not an
+extra hint toward any particular answer.
+
+**It correctly scoped itself.** It ran the accelerator, got the same two signals §3.7's review
+did (`node`, `terraform`, both conceptual), loaded `runtimes/universal.md`,
+`application/async-and-blocking.md`, and `infrastructure/resources.md` — the same reference set
+as before, arrived at independently — and explicitly declined `databases/*`, `distributed/*`,
+and every `application/*` file that assumes a datastore, pool, or outbound service call that
+this repository doesn't have. It stated the observability gap up front, exactly as
+`methodology/discovery.md` requires, and explicitly recorded that it could not run the
+interactive workload interview and was proceeding per the skill's own rule for that case rather
+than treating it as a blocker.
+
+**It found the same core issue, plus something the manual review missed.** Its PERF-001 is the
+identical finding: the SSM client and secret are constructed and fetched inside the handler on
+every invocation instead of once at module scope, citing the same `infrastructure/resources.md`
+§5 passage §3.7 did. Its PERF-002 — unconditional `console.log` of the full `event` and `context`
+objects on every invocation — is real, correctly evidenced, correctly scored `Low`/`P3`, and is
+not in §3.7's write-up at all. The code was read in both reviews; only one of them called it a
+finding. That is exactly the kind of gap an independent pass exists to surface.
+
+**It made a stronger, better-evidenced case for higher severity on the core finding, using
+evidence the manual review never gathered.** §3.7 scored PERF-001 `Medium`, reasoning that the
+extra SSM round trip was "bounded... not a multiplier." The blind agent read `src/example.js` —
+a file the manual review looked at only to confirm it wasn't part of the deployed artifact, not
+for what it revealed — and found that it documents *other Lambda functions invoking this one
+synchronously* (`InvocationType: 'RequestResponse'`), meaning callers block on this function's
+latency. Combined with the README's stated purpose (a shared verifier other functions depend on
+so none of them has to hold the secret), that makes the blast radius "service," not
+"endpoint" — every extra millisecond here is paid by every caller, on every one of their
+requests. **`High` is the better-supported score.** This isn't a case of two reasonable people
+disagreeing; it's a case of one review having read a piece of evidence the other one had in hand
+and set aside. The corrected finding: Severity `High`, Confidence `High`, Priority **P1**.
+
+**Its PERF-003** (the terraform config declaring the long-EOL `nodejs4.3` runtime) reached the
+same "this is out of performance scope" conclusion §3.7 did, but handled it differently:
+instead of moving it to "considered and not reported," it was included as `Informational`/`P3`,
+explicitly labeled as "primarily a deployability/support concern" with any performance angle
+called "secondary and unquantified." At the time this looked like two defensible choices with
+no stated preference between them. On reflection it isn't defensible either way: `Informational`
+is defined (`rubrics.md`) as "no current or projected impact" — that is a claim about
+performance, and an end-of-life runtime is not "no impact," it's *no performance impact*, a
+different claim entirely. Filing it at `Informational`/P3 places a real, unrelated-axis issue on
+the same scale as "hygiene, no consequence," which reads as "safe to leave" for something that
+was never being judged on performance to begin with. **Fixed**, in two stages. The first pass
+made it unscored and one-line — which under-corrected: a real security finding, once found with
+real evidence, deserves the same rigor as a performance finding, not a footnote. `SKILL.md` rule
+8 now requires the full write-up — Problem, Evidence, Recommendation, Trade-offs, Validation,
+same as a `PERF-` finding — under a `SEC-`/`COR-`/`MAINT-` ID in a distinct "Adjacent findings —
+outside performance scope" section (`templates/review-report.md`), classified on `Kind` and the
+same evidence-grade `Confidence` scale, plus a plain-language `Risk` note — deliberately never a
+CVSS-style score, since this skill has no dedicated security methodology and manufacturing that
+rigor would be exactly the kind of dishonesty the evidence-first rule forbids. It always names
+what dedicated review would actually assess it properly. Silence was never the right answer
+either — omitting the EOL-runtime fact entirely, the way §3.7's original review effectively did
+by folding it into prose rather than a labeled item, undersells evidence that was real.
+
+**It independently declined exactly the same out-of-scope item** — the non-constant-time
+signature comparison, correctly identified as a security concern rather than a performance one,
+for the same reason §3.7 gave. Two reviewers, no shared context, same boundary applied the same
+way. Of everything in this comparison, this is the strongest single piece of evidence that
+`SKILL.md`'s scope rule is legible to an agent that has never seen this evaluation's own
+reasoning about it — it is not something that only makes sense with the author's context loaded.
+Its "Considered and not reported" section otherwise mirrors the discipline used throughout
+Rounds 1–2 (declining an SDK-version migration, reserved concurrency, and a memory-size tweak,
+each for "no evidence to size this," not "seems fine").
+
+**No number was invented.** Every duration, cost, and byte figure in its output is either a
+named metric to go and read (CloudWatch `Duration`, `IncomingBytes`, an `ssm:GetParameters` call
+count) or explicitly marked as a derivation with no baseline to compute it from yet.
+
+**What this one comparison does and does not establish.** It is one repository, reviewed once,
+by one agent, and the repository was chosen by the author (though the agent had no visibility
+into that choice or into §3.7's conclusions). It does not establish inter-rater reliability at
+scale, and at the time this section was written it did not yet cover the other three
+repositories in this evaluation — extended to all three in §3.9–3.11, summarized in §3.12. What
+it does establish on its own: given only the shipped skill and no session-specific context, an
+independent agent
+reproduced the core finding, caught a real one that was missed, correctly deferred on an
+ambiguous scope question rather than guessing wrong, and applied the security/performance
+boundary identically to a review that had extensively reasoned about that boundary elsewhere.
+That is a meaningfully stronger result than a solo review confirming itself twice would have
+been, and the corrected severity above is now the record — a blind pass that only ever agreed
+with the author would have been much weaker evidence than one that, on inspection, was partly
+right about something the author got wrong.
+
+### 3.9 The blind pass extended to a second repository — `gin-realworld`
+
+The same protocol as §3.8: a fresh `general-purpose` agent, no memory of this project, given only
+the shipped `SKILL.md`'s path and the repository's path (at the same pinned commit as §3.1), told
+this was a real, unmodified, modest-size Go REST service, and that few or zero findings was an
+acceptable honest outcome. It was not told anything §3.1 found.
+
+**It reproduced the core finding exactly**, at the same location, with the same mechanism: the
+unbatched `isFollowing()` call inside `ProfileSerializer.Response()`, issuing one query per
+rendered article/comment author. §3.1 scored this `High`/`High`/**P1**; the blind pass scored it
+`Critical`/`High`/**P0** — a real disagreement, but not an unmotivated one. It escalated the
+severity using two pieces of evidence §3.1's write-up did not carry: **no server-side HTTP
+timeouts anywhere in the codebase**, and **no enforced maximum on the article-list `limit`
+parameter** — meaning the N+1's `n` is not just "one extra query per article" but "one extra
+query per article, for as many articles as any caller cares to request." Both are real, and both
+are exactly the kind of additional evidence §3.8 already demonstrated a blind pass can surface
+that a manual review missed — this is the same pattern appearing a second time, on a different
+repository, independently.
+
+**It diverged on one point worth stating honestly rather than picking a winner.** §3.1's case-6
+check asked one specific question — does the connection-pool arithmetic in
+`application/connection-pools.md` contradict an external, server-side connection ceiling — and
+correctly answered no, because SQLite has none to exceed. The blind pass asked a related but
+different question about the same code (unset `SetMaxOpenConns`, no WAL mode, no busy-timeout)
+— whether an unbounded local pool risks internal contention (`SQLITE_BUSY` errors) against
+SQLite's own single-writer semantics — and reported it as a finding (`Critical`/`Medium`/P1),
+explicitly flagging that SQLite is `conceptual` tier in this skill's registry and that the claim
+draws on general engine knowledge beyond what the skill provides, not silently asserting it as
+skill-backed fact. Neither review is wrong; they checked different things against the same lines
+of code, and only the blind pass's question happens to be the one with a real answer worth
+acting on. This is recorded here rather than smoothed over, because a false "they agreed" summary
+would be less honest than the actual result.
+
+**It found several things §3.1 never looked for.** An unconditional full-table `COUNT(*)` on
+every unfiltered list request; five foreign-key-shaped columns (`AuthorID`, `FavoriteID`,
+`FavoriteByID`, `FollowingID`, `FollowedByID`) with no supporting index, contrasted explicitly
+against the `Slug`/`Tag`/`Email` columns that *do* carry one; and a complete absence of
+observability (no metrics, tracing, profiling endpoint, or load-test tooling anywhere in the
+repository) — scored as its own finding rather than only used to cap other findings' confidence.
+
+**It produced two real, independent `SEC-` findings** — a hardcoded JWT signing secret committed
+to source (with a `#nosec` suppression and a CI security job run with `-no-fail`), and a bearer
+token accepted via a URL query parameter — using the "Adjacent findings — outside performance
+scope" format exactly as `SKILL.md` rule 8 specifies, on a repository that convention was never
+tested against before it existed. Both are real; both are correctly classified as `Kind:
+Security` with a `Risk` note and no fabricated CVSS-style score.
+
+### 3.10 The blind pass extended to a third repository — `fastapi-template`
+
+Same protocol, same pinned commit as §3.2, with one addition to the prompt: an explicit
+instruction that this repository has both a `backend/` and a `frontend/` directory and the
+review is backend-only — necessary framing for any reviewer of this specific repository, not a
+hint about the node-signal bug §3.2 found.
+
+**It independently reproduced §3.2's third bug.** Without being told the `node` signal is a
+documented false positive here, it traced the signal to `package.json`/`node_modules` existing
+only because of the frontend build tooling, correctly declined to apply `technology/node.md`, and
+said so explicitly in its scope section — the same conclusion §3.2 reached, arrived at
+independently.
+
+**It reproduced the fourth finding (the uncapped `limit` on `GET /items`) and scored it higher,
+again by finding more supporting evidence.** §3.2 scored it `Medium`/`High`/**P2**, reasoning from
+the missing bound alone. The blind pass folded in a fact §3.2 did not report: **the entire
+migration history contains exactly one index beyond primary keys** (`ix_user_email`), and neither
+`item.owner_id` nor either table's `created_at` column — both used as filter/sort keys on this
+same endpoint — has ever been indexed. Missing bound plus missing index together produced
+`High`/`High`/**P1**, and the recommendation (a composite index) addresses a cause §3.2 never
+identified in the same finding.
+
+**It went further than §3.2's case-6 check in a way that matters.** §3.2 found nothing to check
+the connection-pool arithmetic against (no explicit pool size or container memory limit in the
+scanned files) and correctly recorded that as an unknown rather than asserting fine. The blind
+pass took the same absence one step further: `create_engine()` is called with **zero** arguments
+beyond the URL, which means SQLAlchemy's own defaults apply — and it named them (`pool_size=5`,
+`max_overflow=10`, no `pool_pre_ping`, no statement timeout), multiplied across 4 uvicorn worker
+processes with nothing anywhere doing the arithmetic against Postgres's own `max_connections`.
+This is the same absence §3.2 saw, examined one level deeper.
+
+**It found a real, structurally sophisticated finding with no equivalent in §3.2 at all**: four
+endpoints hold an open, idle-in-transaction database connection for the entire duration of a
+synchronous outbound SMTP call, because password-recovery and admin-account-creation email is
+sent inline rather than deferred. It traced this through FastAPI's dependency-injection chain
+(the connection is acquired by the auth dependency, not the handler's own code, on one of the
+four endpoints) — the kind of one-level-removed tracing this project's own N+1 findings have
+praised elsewhere when done well.
+
+**The standout result of this comparison is a correctness bug §3.2 entirely missed**, caught only
+because the blind pass actually ran a parser against every file rather than reading them: `except
+InvalidTokenError, ValidationError:` in `backend/app/api/deps.py` is Python 2 syntax and a hard
+`SyntaxError` in Python 3 — the module, and therefore the application, cannot be imported at all
+in its current committed state. This was confirmed by running `ast.parse()` against every
+backend source file and quoting the exact traceback, not inferred. Filed correctly as `COR-001`,
+`Confidence: Confirmed`, under the adjacent-findings section, with the accurate observation that a
+service that cannot start has no performance profile to review — and that this should be fixed
+before any of the review's own performance recommendations can even be validated. §3.2's original
+review, which did not attempt to import or run the code, had no way to catch this; the difference
+is a direct demonstration of "verify claims by running something" outperforming "verify claims by
+reading carefully" for the one class of defect that reading alone cannot reveal.
+
+### 3.11 The blind pass extended to a fourth repository — `URLshortener`
+
+Same protocol as §3.5, told a working Go toolchain was available and real, executed evidence was
+preferred wherever practical.
+
+**It reproduced §3.5's primary finding exactly** — no `ReadTimeout`/`WriteTimeout`/`IdleTimeout`/
+`ReadHeaderTimeout` on the `http.Server` in `NewHandler` — at the same location, same
+`Critical`/`High`/**P0**.
+
+**It escalated §3.5's secondary finding using evidence the original review didn't report**, the
+same pattern as §3.8, §3.9, and now §3.10: §3.5 scored the missing-timeout on the self-referential
+health-check HTTP calls as `Medium` — real, but "confined to the health-check path rather than
+the main serving path." The blind pass traced the same call one step further and found it is also
+invoked **once at process startup**, as a readiness gate, before the server's signal-wait loop —
+so a hang there does not just degrade the health-check endpoint, it can prevent the process from
+ever reaching a clean startup *or* a clean, documented non-zero exit on failure, contradicting the
+project's own README. Scored `Critical`/`High`/**P0** on that basis — a materially different
+severity, earned by tracing one more call site than the original review did.
+
+**It independently re-derived §3.5's case-6 conclusion using the identical verification
+technique.** §3.5 read the vendored `go-redis/redis/v7@v7.4.1` source directly to confirm the
+client's unset options resolve to sane defaults (5s dial timeout, 3s read/write timeout, a pool
+sized to `10 × NumCPU`) rather than "unbounded." The blind pass did the same thing — extracted and
+read the same dependency version's `options.go` from the local module cache — and reached the
+same conclusion, correctly declining to report it as a finding. Two independent reviews, same
+non-obvious verification step, same answer.
+
+**It found a real, new finding with no equivalent in §3.5**: every request is logged synchronously,
+full headers included, through Go's stdlib `log.Logger`'s internal mutex, before any dispatch —
+scored `Medium`/`High`/**P2** and explicitly tagged `scalability-risk` rather than inflated,
+since its current cost is plausibly negligible at this project's likely (small, demo-scale)
+traffic and the review said so.
+
+**It found a second new, genuinely sophisticated finding**: `readBody()` reads the full POST body
+via `io.ReadAll` with no size cap on two unauthenticated write endpoints — confirmed against the
+handler code's own `// TODO: check some authorization ???` comment as evidence there is no gate
+upstream of the read.
+
+**It produced a real, well-traced adjacent finding with no equivalent in §3.5**: the documented
+"comma-separated list of cluster/sentinel nodes" configuration silently constructs a
+`ClusterClient` (never the Sentinel client the README also promises) whenever two or more
+addresses are configured, verified by reading the pinned dependency's own routing logic
+(`NewUniversalClient`) and its behavior against non-cluster nodes (`ClusterClient.loadState`,
+falling back to a random node when `CLUSTER SLOTS` returns nothing) — a plausible, silent,
+intermittent reliability defect the original review had no reason to look for, since it wasn't
+investigating client-construction routing at all.
+
+**One honest limitation, stated rather than hidden.** §3.5 hit a real Windows/Unix build
+incompatibility in an unrelated test file (`syscall.Kill` undefined on Windows) while trying to
+run this repository's committed benchmarks, and worked around it — neutralizing the one
+offending line for the duration of the run, reverting it immediately after — specifically so it
+could obtain the real, executed benchmark numbers that were the whole point of that case. The
+blind pass, running in the same kind of environment, hit the identical build failure and took a
+different, equally defensible path: it reported the failure itself as a finding (`MAINT-001`,
+`Confirmed`, with the exact failed-build output quoted), rather than patching around it. This
+means the blind pass never obtained executed benchmark evidence for token generation or Redis
+operation cost — a real gap relative to §3.5's result, not a flaw in either approach, and worth
+recording precisely because it shows two reasonable responses to the same obstacle producing
+different evidence. It also separately noticed the pinned `go-redis/redis/v7` client is several
+major versions behind current upstream (`MAINT-002`).
+
+### 3.12 What four independent blind passes now establish
+
+Across §3.8–3.11, the same shape recurs with enough consistency to say it is a real pattern, not a
+coincidence of one lucky run: in **every one of the four** blind passes run so far, the agent
+reproduced the reviewed repository's previously-known primary finding at the same or an escalated
+severity, and in **three of the four** (§3.8, §3.9, §3.11 — and arguably §3.10's pool-arithmetic
+deepening too), the escalation was earned by finding real, additional evidence the original
+review had in the repository but had not surfaced, not by a looser rubric or a more generous read.
+Every one of the four also produced at least one finding — sometimes a `PERF-`, sometimes a
+correctness/maintenance one filed under rule 8 — that the original human-authored review missed
+entirely, including one (§3.10's `SyntaxError`) that a careful reading would not have caught at
+all without actually running a parser. The rule-8 "Adjacent findings" convention, introduced after
+§3.1–§3.7 were originally written, was applied correctly and independently in both §3.9 and §3.11
+on repositories it had never been tested against.
+
+**What this still does not establish.** Four repositories, each reviewed once by one blind agent
+— not a repeated-run consistency measurement, not a comparison against a human expert baseline,
+and not proof that this holds for every stack this skill covers (all four repositories are Go or
+Python; JVM, .NET, and Rust-backed services remain untested by an independent pass). What it does
+establish, now replicated four times rather than asserted once: an agent with no memory of this
+project's own findings, given only the shipped skill, consistently produces a review that is at
+least as rigorous as — and on three of four repositories, materially better evidenced than — the
+manual review it is compared against.
+
+### 3.13 The blind pass extended to a fifth repository, and a fifth stack — `gothinkster/spring-boot-realworld-example-app` (JVM)
+
+The largest remaining gap named in §3.12 was that all four prior blind passes were Go or Python,
+leaving the three `deep`-tier runtime references added in the v0.2.0 coverage push (JVM, .NET,
+Rust) completely untested against a real repository. This round closes one of those three.
+
+The agent was given the unmodified skill and a fresh, unmodified clone of
+`gothinkster/spring-boot-realworld-example-app` — a Spring Boot RealWorld implementation — with
+no memory of this project's own findings and no instruction beyond "review this repository."
+
+**What it found, in brief:**
+
+- **PERF-001 (`Critical`/`P0`)** — every GraphQL field resolver (`ProfileDatafetcher`,
+  `ArticleDatafetcher`) issues unbatched per-item queries with no `DataLoader` anywhere in the
+  codebase, an `O(N·M)` cost under nested queries. The agent noted the REST path in the same
+  codebase already batches the identical data (`ArticleQueryService.setFavoriteCount`), which it
+  used as direct evidence the fix is a known, available pattern rather than new work.
+- **PERF-002 (`High`/`P1`)** — no index on any foreign-key or filter column in the schema
+  (`tags.name`, `article_tags.article_id`/`tag_id`, `comments.article_id`,
+  `follows.user_id`/`follow_id`), provable directly from the migration file with no runtime
+  evidence needed.
+- **PERF-003 (`High`/`P1`, capped at `Medium` confidence)** — SQLite behind a 10-connection
+  HikariCP pool and a 200-thread Tomcat pool, with no journal-mode or busy-timeout configuration.
+  The agent explicitly declined to assert `Critical`/`High` confidence here, citing
+  `registry.yaml`'s own note that SQLite has no dedicated technology file and concurrency
+  questions should be flagged as unknowns — a correct, rule-following application of a
+  conceptual-tier degradation, not a missed opportunity.
+- **PERF-004 (`Medium`/`P2`)** — an unbounded per-tag loop inside a single write transaction on
+  article creation, with no upper bound on the caller-supplied tag list.
+- **SEC-001** — a JWT signing secret committed in plaintext to `application.properties`, correctly
+  filed under rule 8 as `Kind: Security` with a `Risk` note, not scored on the performance rubric.
+
+**A real, reproducible false negative, found and fixed.** `detect_stack.py` reported zero
+datastores for this repository — the `sqlite` signal's match list (`sqlite3`,
+`better-sqlite3`, `mattn/go-sqlite3`, `sqlite://`, `libsql`) covers no JVM driver coordinate or
+connection-string scheme, so `org.xerial:sqlite-jdbc` (the dominant Maven Central artifact for
+SQLite-on-JVM) and `jdbc:sqlite:` never matched. The agent only found the datastore — and, with
+it, PERF-002 and PERF-003, two of its three highest-priority findings — because
+`methodology/discovery.md`'s "read the lockfile, check connection-string schemes" instruction
+told it to check `build.gradle` and `application.properties` by hand regardless of what the
+accelerator reported. **Fixed**: `registry.yaml`'s `sqlite` entry now matches `sqlite-jdbc`,
+`org.xerial`, and `jdbc:sqlite:`, with two new regression fixtures in
+`tests/test_detect_stack_regressions.py` reproducing the exact dependency-coordinate and
+connection-string text that failed to match, verified to fail against the pre-fix registry before
+being accepted. This is the same failure shape as the Round 1 bugs in §3.3 — a signal that never
+fires produces no visible symptom to notice, and is caught only by deliberately checking that a
+claimed detection capability actually detects something.
+
+**On the reference content itself.** `technology/jvm.md`'s concurrency-model framing (identify
+thread-per-request vs. reactive vs. virtual-thread first) was, in the agent's own words, "directly
+actionable" from `build.gradle`/CI and correctly kept it from over-flagging synchronous MyBatis
+calls as event-loop-stalling — the framing a WebFlux service would deserve but this thread-per-
+request one does not. `application/api.md`'s GraphQL N+1 guidance, at `conceptual` tier with no
+dedicated file, mapped exactly onto the DGS datafetcher pattern found — a working instance of
+graceful degradation, not a gap. One piece of friction, not treated as a bug: the agent found the
+`registry.yaml` note capping SQLite concurrency reasoning at "unknown" slightly over-cautious for
+architectural facts (single-writer, file-locking) it considered closer to general relational-
+engine knowledge than to obscure engine trivia — a defensible complaint, left unresolved here
+pending a real `technology/sqlite.md` file, which is still the correct long-term fix per the
+roadmap in `docs/supported-technologies.md`.
+
+### 3.14 The blind pass extended to a sixth repository, and a sixth stack — `launchbadge/realworld-axum-sqlx` (Rust)
+
+Closing the second of the three untested `deep`-tier runtime references. The agent reviewed a
+fresh, unmodified clone of a RealWorld implementation in Rust (Axum + SQLx + PostgreSQL), again
+with no memory of this project's own findings.
+
+**What it found, in brief:**
+
+- **PERF-001 (`Critical`/`P0`)** — an unauthenticated, unbounded `GET /api/tags` endpoint running
+  a full-table `DISTINCT`-over-`unnest` scan with no cache and no rate limit. The agent cited the
+  codebase's *own* source comment — `"this query requires a full table scan and is a likely point
+  for a DoS attack"` — as corroborating evidence, exactly the kind of evidence-first sourcing rule
+  1 asks for.
+- **PERF-002 (`Critical`/`P0`, `quick-win`)** — `limit.unwrap_or(20)` used directly as the SQL
+  `LIMIT` on two list endpoints with no upper clamp, each returned row carrying two to three
+  correlated subqueries.
+- **PERF-003 (`High`/`P1`)** — no server-side request timeout or body-size limit configured
+  anywhere in the Axum middleware stack (`tower-http` included with only its `trace` feature, not
+  `limit` or `timeout`).
+- **PERF-006 (`High`/`P1`)** — the primary unfiltered article-listing sort (`ORDER BY created_at`)
+  has no supporting index; the schema's only secondary index is the GIN index on `tag_list`.
+- **PERF-005 (`Medium`/`P2`)** — correctly identified `spawn_blocking`-offloaded Argon2 hashing as
+  the *right* pattern (not a defect), then still raised a `Medium` finding that nothing bounds
+  concurrent offloaded hashes beyond Tokio's own default blocking-pool cap — a materially more
+  precise finding than either "flag the blocking call" or "say nothing" would have been.
+- **COR-001 and COR-002** — two real, verified correctness bugs found incidentally while reading
+  the same queries for cost analysis: a `favorited` field computed via an uncorrelated `EXISTS`
+  subquery (checks whether the user favorited *any* article, not *this* one) repeated across five
+  query sites, and a feed endpoint with no `ORDER BY` at all. Both filed under rule 8 with `Kind:
+  Correctness`, not scored on the performance rubric.
+
+**Two real gaps in the reference content, found and addressed.** First: `technology/rust.md`
+described Tokio's blocking-thread pool only as "usually small by default," with no concrete
+number or the actual `Builder::max_blocking_threads` configuration knob — the agent had to reason
+from general Tokio knowledge, outside the file, to correctly score PERF-005 as bounded rather than
+unbounded. **Fixed**: the file now states the default (512 threads) and names the builder method.
+Second, and more structural: the agent noticed `detect_stack.py`'s `references_to_load` did not
+include `application/data-access.md`, `application/connection-pools.md`, or
+`application/serialization.md` — all three of which turned out to be load-bearing for PERF-002,
+PERF-003, and PERF-006 — because those three rows in SKILL.md's reference-routing table are
+triggered by a *usage pattern* ("any pooled client", "ORM, query construction"), not by a
+registry-matched technology signal, so the accelerator structurally cannot surface them. The agent
+caught this only by cross-checking the routing table by hand rather than trusting the script's
+output as complete. **Addressed**: `SKILL.md`'s Phase 1 now states this explicitly —
+`references_to_load` is never the full reading list, and every "Always available" row is in scope
+for Phase 4's layer gate regardless of whether the accelerator named it. This is a documentation
+fix, not a code fix: the correct behavior was already "cross-check the table," the agent already
+did it correctly, and the gap was that nothing said so forcefully enough for a less careful pass
+to be guaranteed to do the same.
+
+**On the reference content that held up.** The agent reported `technology/rust.md`'s runtime-
+identification instruction (confirm `current_thread` vs. multi-threaded Tokio before reasoning
+about blocking) as directly actionable and load-bearing — it is what let the agent correctly
+*not* flag the `spawn_blocking` offload as a defect, a false positive the reference specifically
+prevented. Its explicit "confirm `--release`" warning also proved concretely relevant: this
+repository's CI never builds in release mode, a fact the agent said it would not have thought to
+check without the reference naming it. The agent checked every item in the file's Rc/Arc-cycle,
+static-vs-dynamic-dispatch, and unsafe-boundary checklist and found the codebase genuinely clean
+on all of them — reported plainly as a negative result rather than manufactured into a finding,
+consistent with rule 4.
+
+### 3.15 The blind pass extended to a seventh repository — `gothinkster/aspnetcore-realworld-example-app` (.NET)
+
+The last of the three `deep`-tier runtime gaps named in §3.12 and narrowed by §3.13–3.14: JVM and
+Rust are covered, and .NET was the one remaining runtime reference (`technology/dotnet.md`) never
+exercised by an independent pass. The agent was given the unmodified skill and a fresh,
+unmodified clone of `gothinkster/aspnetcore-realworld-example-app` (commit `a397d119`, a RealWorld
+implementation on ASP.NET Core 10 / Mediator / EF Core, running SQLite by default with an
+`Microsoft.EntityFrameworkCore.SqlServer` provider also wired in), with no memory of this
+project's own findings and no instruction beyond "review this repository."
+
+**What it found, in brief:**
+
+- **PERF-001 (`Critical`/`P0`)** — every request, read or write, is wrapped by
+  `DBContextTransactionPipelineBehavior<TRequest,TResponse>.Handle`
+  (`src/Conduit/Infrastructure/DBContextTransactionPipelineBehavior.cs:27-35`) in a call to
+  `ConduitContext.BeginTransaction()`/`CommitTransaction()`
+  (`src/Conduit/Infrastructure/ConduitContext.cs:94-133`), which invoke the **synchronous**
+  `Database.BeginTransaction(...)`/`.Commit()`/`.Rollback()` — not their `*Async` equivalents —
+  from inside an `async ValueTask<TResponse> Handle(...)` method. This is the exact
+  synchronous-datastore-call-in-an-async-handler shape `application/async-and-blocking.md` §2
+  names as the most-missed blocking pattern, applied globally: two genuinely blocking DB round
+  trips on literally every endpoint, including plain `GET` reads (`Articles/List.cs`,
+  `Articles/Details.cs`) that need no transaction at all, each occupying a thread-pool thread for
+  the round-trip duration per `technology/dotnet.md` §2's progressive-degradation-under-load
+  pattern, and holding a pooled connection open for the full handler duration on every request.
+- **PERF-002 (`High`/`P1`)** — `ArticleExtensions.GetAllData()`
+  (`src/Conduit/Features/Articles/ArticleExtensions.cs:9-14`) unconditionally
+  `.Include(x => x.ArticleFavorites)`s the full favoriting-user join table for every article
+  returned by the list (`Articles/List.cs:31`) and detail (`Articles/Details.cs`) endpoints, only
+  to discard every row but a count: `Article.FavoritesCount`/`Favorited`
+  (`src/Conduit/Domain/Article.cs:29,32`) read `ArticleFavorites.Count` off the materialized
+  in-memory collection. `application/data-access.md` §3 names this exact pattern — "Counting by
+  materializing. Fetching rows to count them is O(n) transfer for a number" — and the growth axis
+  is the one that matters here: cost scales with how many people ever favorited an article, not
+  with the page size, so it grows without bound as the app is used, on the two most-hit reads in
+  the service.
+- **PERF-003 (`High`/`P1`)** — `Articles/List.cs:133` calls the synchronous `queryable.Count()`
+  (not `CountAsync`) inside the same async handler, on the already-filtered `IQueryable`, to
+  compute `ArticlesCount` for pagination — a second blocking DB round trip re-executing every
+  `WHERE` clause already applied to the page query, on the feed/list endpoint specifically.
+- **PERF-004 (`Medium`/`P2`, `scalability-risk`)** — `Articles/Create.cs:58-70` loops over the
+  caller-supplied `TagList` and, for each unrecognized tag, issues `FindAsync` then an immediate
+  `SaveChangesAsync` — a round trip pair per new tag, per article creation. `TagList` has no
+  length validation in `ArticleDataValidator` (`Create.cs:28-36`), so the round-trip count is
+  attacker-controlled, not merely inefficient.
+- **SEC-001** — the JWT signing key is a hardcoded literal in source
+  (`src/Conduit/ServicesExtensions.cs:47`,
+  `"somethinglongerforthisdumbalgorithmisrequired"u8.ToArray()`), committed in plaintext to a
+  public repository. Filed under rule 8 as `Kind: Security`, `Confidence: Confirmed` (visible
+  directly in the diff), `Risk: High` — anyone who reads the source can forge a valid token for
+  any user — not scored on the performance rubric.
+
+**A real, reproducible false negative, found and fixed.** `registry.yaml`'s `sqlserver` signal
+matched only the raw ADO.NET client library names (`System.Data.SqlClient`,
+`Microsoft.Data.SqlClient`) and the `sqlserver://` connection-string scheme — never
+`Microsoft.EntityFrameworkCore.SqlServer`, the official EF Core provider package and the dominant
+way a .NET project actually declares a SQL Server dependency in its `.csproj`. This repository's
+own `src/Conduit/Conduit.csproj` references only that package; `detect_stack.py` still reported
+`sqlserver` correctly, but only because `Microsoft.Data.SqlClient` happens to appear as a
+transitive entry in the committed `packages.lock.json` — an incidental save, not a real detection
+path. Feeding the `.csproj` content alone (no lock file, the common case for a repo that has not
+opted into `RestorePackagesWithLockFile`) to `detect.detect()` directly confirmed zero datastores
+detected. Same failure shape as the `sqlite-jdbc` false negative in §3.13: an ORM/driver provider
+package name missing from a datastore's match list, invisible until deliberately tested rather
+than merely observed to work once. **Fixed**: `registry.yaml`'s `sqlserver` entry now also matches
+`Microsoft.EntityFrameworkCore.SqlServer`, with a new regression fixture in
+`tests/test_detect_stack_regressions.py`
+(`test_ef_core_sqlserver_provider_matches_sqlserver_signal`) reproducing this repository's actual
+`.csproj` `PackageReference` text, verified to fail against the pre-fix registry before being
+accepted.
+
+**On the reference content itself.** `technology/dotnet.md` §2's naming of thread-pool starvation
+as this runtime's distinct failure shape — "latency degrades progressively under load rather than
+collapsing immediately" — was directly load-bearing for scoring PERF-001 and PERF-003 as `High`
+rather than a vague "consider async" note, and its explicit instruction to check for
+`.Result`/`.Wait()`/`.GetAwaiter().GetResult()` first correctly did **not** fire here — this
+codebase awaits consistently everywhere except the two genuinely-synchronous EF Core/ADO.NET
+calls found, which is a narrower and more specific failure mode than sync-over-async and one the
+file names separately. `application/data-access.md` §3 and §5 mapped onto PERF-002 and PERF-001
+respectively with no adaptation needed. One gap, not fixed here: `technology/dotnet.md` states
+that ASP.NET Core installs no request `SynchronizationContext`, which is correct and ruled out a
+classic sync-over-async deadlock as an explanation for PERF-001/003 — but the file has no
+guidance distinguishing "genuinely synchronous provider call" (this repository's actual pattern)
+from "sync-over-async on a `Task`" as two distinct sub-shapes of the same starvation failure mode;
+the agent had to reason that distinction from `application/async-and-blocking.md` §2's general
+table instead. Worth a future addition, not a defect serious enough to block this write-up.
+
+
+### 3.16 The blind pass extended to an eighth repository, and the Node.js runtime — `gothinkster/node-express-realworld-example-app` (Node.js/Express/Prisma/PostgreSQL)
+
+Node.js has been `deep`-tier since before v0.2.0 — longer than JVM, .NET, or Rust — but, as §5 notes, it had never been independently blind-passed. This run closes that gap. The
+repository is an actively maintained (3.8k stars, pushed 2024, still merged into in 2026) RealWorld
+implementation on Express + Prisma + PostgreSQL, cloned fresh and unmodified. PostgreSQL was
+chosen over the project's other RealWorld Node repository (Mongo-backed) specifically because
+`docs/examples/node-mongo-redis.md` already covers Node+Mongo+Redis in depth; a Postgres-backed
+repository adds independent coverage of `technology/postgres.md` and `databases/relational.md`
+under a stack neither had been checked against with a real repository before. The agent had no
+memory of this project's own findings and no instruction beyond "review this repository."
+
+**What it found, in brief:**
+
+- **PERF-002 (`Critical`/`P0`, `quick-win`)** — `GET /articles` and `GET /articles/feed` pass the
+  client-supplied `limit` query parameter straight into Prisma's `take` with only a
+  default-if-absent (`Number(query.limit) || 10`), never an enforced maximum
+  (`article.service.ts:82-83`, `:131-132`); `GET /articles/:slug/comments` has no page bound at
+  all (`article.service.ts:433-458`). Combined with PERF-001 below, a single crafted request has
+  no ceiling on the data it forces the service to materialize and serialize.
+- **PERF-001 (`High`/`P1`, `quick-win`)** — every article, profile, and comment-author read fetches
+  the *entire* `favoritedBy` and/or `followedBy` relation with no `select`, `where`, or `take`
+  (`article.service.ts:90-104` and six further call sites in the same file; `profile.service.ts:6-
+  13,22-40,42-60`), then reduces it to a boolean in JavaScript (`article.mapper.ts:11`,
+  `author.mapper.ts:7-9`, `profile.utils.ts:8-10`). The query already computes the efficient form
+  in parallel — `_count: { select: { favoritedBy: true } }` is present in every article query — but
+  `articleMapper` uses `article.favoritedBy.length` instead of the already-fetched
+  `article._count.favoritedBy` (`article.mapper.ts:12` against `article.service.ts:99-103`), the
+  cheap primitive fetched and silently discarded next to the expensive one actually used.
+- **PERF-003 (`High`/`P1`)** — no index on `Article.authorId`, `Comment.articleId`, or
+  `Comment.authorId` anywhere in the migration history (`src/prisma/migrations/*/migration.sql`,
+  four files, checked in full); the only non-PK/unique indexes created are on the implicit
+  many-to-many join tables' second column. Both are on the critical-path filter/join in
+  `getArticles`/`getFeed`/`getCommentsByArticle`.
+- **PERF-004 (`Low`/`P2`, `quick-win`)** — `checkUserUniqueness` awaits two independent,
+  unrelated `findUnique` calls sequentially rather than concurrently (`auth.service.ts:10-26`).
+- **SEC-001** — `process.env.JWT_SECRET || 'superSecret'`, a hardcoded fallback signing secret,
+  present at both call sites that construct the JWT middleware (`auth.ts:16,21`) and the one that
+  signs tokens (`token.utils.ts:4`); if the environment variable is unset in any deployment, any
+  caller can forge a valid token for any user id.
+- **SEC-002** — the same unbounded `favoritedBy`/`followedBy` includes behind PERF-001 pull the
+  full `User` row, including the `password` column (`schema.prisma:47`, a plain field with no
+  `@ignore` or `select` narrowing it out), into application memory for every favoriter and every
+  follower on every article/profile view. Verified not currently serialized into any response body
+  — the mappers only ever read `.some(...)`/`.length` off it — so this is unnecessary exposure
+  surface rather than a live leak, and PERF-001's fix removes it as a side effect.
+
+**A real, reproducible bug found and fixed — a false positive this time, not a false negative.**
+`detect_stack.py` reported `sqs` (Amazon SQS) as a detected broker with `weak_evidence` **absent**
+(i.e. graded as strong, manifest-level evidence), and `pgx` (the Go Postgres driver) as one of the
+tokens supporting the `postgres` datastore signal — in a repository with no AWS SDK dependency
+anywhere in it (`grep -c aws package-lock.json` → 0) and no Go code at all. Both tokens matched
+inside base64-encoded npm `"integrity"` hashes in `package-lock.json` by pure coincidence: `sqs`
+inside `mimic-fn`'s hash (`...Wydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ...`) and
+`pgx` inside `@babel/plugin-transform-typescript`'s (`...TDoqHCjLoHb6+QgsV1WsT2nipRqCPgxD3LXnEO7...`).
+`package-lock.json` is unconditionally classified as `manifest`-kind content (real dependency
+evidence, `STRONG_EVIDENCE_KINDS`), so unlike the `gin`/`echo` collisions found in Round 1 (§3.3,
+which landed in `yaml`-kind files already graded weak), these matches were reported as
+full-strength detections with nothing in the tool's own output to flag them as suspect. Left
+unfixed, this specific case was harmless — Postgres genuinely is the datastore, so `pgx`'s false
+match happened to agree with the true answer — but the `sqs` false positive was not harmless: it
+would have told a reviewing agent to load broker-analysis references and look for a message queue
+that does not exist, a direct violation of `SKILL.md` rule 6 ("absent layers are silent").
+**Fixed**: following the same narrowing precedent Round 1 established for `gin`/`echo`
+(`registry.yaml`), the `postgres` signal's `pgx` token is now the qualified Go module path
+`jackc/pgx`, and the `sqs` signal drops the bare `sqs` token in favor of `arn:aws:sqs` and
+`AWS::SQS` (its CloudFormation/SAM resource type) — both still catch real usage, neither can
+collide with an arbitrary base64 hash. Four new regression fixtures reproduce the exact collision
+text and confirm the narrowed tokens still match genuine dependency declarations, added to
+`LockfileHashCollisionTests` in `tests/test_detect_stack_regressions.py`.
+
+**A second, independent bug: a false negative, once the first fix is applied on its own.** Fixing
+the `pgx` collision in isolation would have *removed* the only match that fired the `postgres`
+signal for this repository at all — this Prisma-based project declares no dependency named `pg`,
+`postgres`, or any other postgres token anywhere `detect_stack.py` reads; the real datastore
+identity lives entirely in `datasource db { provider = "postgresql" }` inside
+`src/prisma/schema.prisma`, a file extension `detect_stack.py` never scanned (`content_kind()`
+returned `None` for it — the same silent-skip shape as any unrecognized file). Prisma is one of
+the most widely used Node.js ORMs, and package manifests name only `@prisma/client`/`prisma`,
+neither a datastore token; without reading the schema file, a Prisma project's actual datastore
+has no legitimate way to be detected at all. **Fixed**: `.prisma` was added to
+`CONTENT_SUFFIXES`, so `schema.prisma` (and any `*.prisma` file) is now scanned as manifest-kind
+content — the existing `postgresql`/`mysql`/`mongodb` tokens already in `registry.yaml` then match
+the `provider = "..."` line directly, no new registry entries needed. Two more regression fixtures
+(`PrismaSchemaFileTests`) confirm `content_kind()` now recognizes the extension and that a
+`postgresql` provider line is graded as strong (non-`weak_evidence`) evidence. Both bugs were
+verified to actually fail against the pre-fix code before being accepted, and
+`python -m unittest discover -s tests` plus `python scripts/check_repo_invariants.py` pass with
+both fixes applied.
+
+**On the reference content.** `application/data-access.md`'s "existence checks by full fetch" /
+"counting by materializing" framing (§3) mapped directly onto PERF-001 — the file names the exact
+shape found, down to preferring a bounded existence query over a full fetch. `databases/
+relational.md`'s "a referencing column is frequently unindexed by default" (§2) was directly
+actionable from the migration files alone, no runtime evidence needed, exactly as the file
+predicts. `technology/node.md`'s single-process/no-`cluster`/no-`worker_threads` guidance (§2) was
+consciously **not** turned into a finding: the file is explicit that under-utilized parallelism is
+checkable only "on a host with multiple cores available," and this repository defines no
+infrastructure-as-code, replica count, or host spec anywhere — asserting the host's core count
+would have been an invented fact, not evidence, and declining to do so is the file's own
+instruction followed correctly rather than a missed finding. The same restraint applied to a
+Postgres `statement_timeout` question: `technology/postgres.md` §5 calls its absence a common and
+consequential gap, but the only place it could be configured here is the `DATABASE_URL` connection
+string inside a `.env` file the skill's rule 3 forbids opening for content — so this is recorded as
+an unknown for the user to check, not asserted either way.
+
+### 3.17 What eight independent blind passes now establish
+
+§3.13, §3.14, §3.15, and §3.16 close all four runtime-coverage gaps named in §3.12 and §5 — JVM,
+Rust, .NET, and Node.js are no longer untested by an independent pass, the last of the six
+`deep`-tier runtimes now covered. All four new runs reproduced the pattern established across
+§3.8–3.11: each found a `Critical`/`P0` finding with direct code-level evidence, and each found at
+least one real issue (JVM: `SEC-001`; Rust: `COR-001`, `COR-002`; .NET: `SEC-001`; Node.js:
+`SEC-001`, `SEC-002`) the rule-8 "Adjacent findings" convention was designed for. All four also did
+something §3.8–3.11 did not: each found a real, reproducible bug **in the skill's own detection or
+reference content**, not only missed evidence in the target repository — a
+`sqlite-jdbc`/`jdbc:sqlite:` detection false negative and an `Microsoft.EntityFrameworkCore.SqlServer`
+detection false negative, both structurally identical in shape to Round 1's (§3.3) and to each
+other, plus an undocumented Tokio default and a structural gap in what `references_to_load` can
+ever contain (Rust), and a pair of Node.js bugs — a `package-lock.json` base64-hash-collision false
+positive on `sqs`/`pgx` and a false negative where Prisma-based projects had no legitimate way to
+have their datastore detected at all, since `schema.prisma` was never scanned. §3.8–3.11 exercised
+signal-and-reference paths this project's own Round 1–2 testing had already walked (Go and Python,
+the two ecosystems the author tested by hand); §3.13–3.16 are the first blind passes against
+reference content that had *never* been run against a real repository by anyone, author included —
+and all four found something. That is closer to what an independent pass is actually for than
+reproducing an already-verified finding is.
+
+Two false negatives in two different datastore signals (§3.13's `sqlite`, §3.15's `sqlserver`),
+found by two different agents against two different stacks, share the identical root cause: the
+match list was built from the raw driver/client library, not the ORM provider package that most
+real projects actually declare. That is now a pattern worth naming explicitly rather than treating
+each occurrence as an isolated bug — a plausible next step is auditing every `deep`- and
+`conceptual`-tier datastore signal for the equivalent gap across each supported runtime's dominant
+ORM, rather than waiting for the next blind pass to find the next instance one at a time. §3.16's
+bugs are a different shape — a lockfile hash-collision false positive and an unscanned schema-file
+false negative — but point at the same underlying lesson: detection evidence graded as strong
+(`STRONG_EVIDENCE_KINDS`) needs to earn that grade, not just come from a manifest-kind file.
+
+**What this still does not establish.** No `deep`-tier runtime remains untested by an independent
+pass. No human-expert baseline exists. Eight repositories is still eight, not a statistically
+powered sample — the value of each additional run continues to be in what specific, checkable bug
+it surfaces, not in moving an aggregate pass rate. Whether inter-run consistency holds is addressed
+next, for one repository — see §3.18.
+### 3.18 A second blind pass on the same repository — inter-run consistency, measured once
+
+Every prior comparison in this section reviewed a repository once. The README's claim —
+priority is "derived from the matrix, never chosen," and rankings are meant to be reproducible —
+has never actually been tested against the same code twice. This section is that test: `gin-realworld`
+is blind-passed a second time, giving three independent reviews of the same commit to compare —
+§3.1 (the original manual review), §3.9 (blind pass 1), and this one (blind pass 2).
+
+**Setup.** A fresh clone of `gothinkster/golang-gin-realworld-example-app` resolved to
+`626c372d259472148d93303f74aa9b9a1cdcef24` — the identical commit §3.1 and §3.9 were run against,
+confirmed by `git rev-parse HEAD` before anything else ran, not merely "the same repository" but
+the literal same source text, removing repo drift as a possible explanation for any difference
+found below. A fresh `general-purpose` agent, spawned with no memory of this session, was given
+only the path to the unmodified `SKILL.md` and the path to this clone, told it was a full review
+of a real, unmodified Go backend, and told nothing about §3.1's or §3.9's existence, contents, or
+scores — the same blindness protocol as §3.8–3.14. `detect_stack.py` was also re-run directly
+(outside the blind agent, for this write-up) against the fresh clone and produced identical
+detections to §3.1's, modulo one accretion from the skill's own evolution since §3.1 was written:
+`go` is now `deep` tier (the Go runtime reference was added and promoted after Round 1), where
+§3.1 explicitly describes this repository as having "no `deep`-tier engine." That is a fact about
+the skill's coverage growing, not about this repository or this comparison, and is noted here
+rather than silently absorbed.
+
+**The primary finding: location and mechanism reproduced exactly, three for three.** All three
+reviews independently trace the identical call chain — `ArticlesSerializer.Response()`
+(`articles/serializers.go:116-141`) batches favorite counts and status before its loop but calls
+`ArticleUserSerializer.Response()` → `ProfileSerializer.Response()` (`users/serializers.go:24-38`)
+→ `isFollowing()` (`users/models.go:121-129`) per rendered article and comment author, one query
+each, unbatched. No review disagreed about where the bug is or what it does.
+
+**Severity: two of three converge exactly, and the two that converge are the two blind passes.**
+§3.1 scored `High`/`High`/**P1**. §3.9 scored `Critical`/`High`/**P0**, escalating on evidence
+§3.1's write-up didn't carry: no server-side HTTP timeouts anywhere in the codebase, and no
+enforced maximum on the article-list `limit` parameter, meaning the blast radius is shared-pool
+saturation, not a bounded per-request cost. This run's blind pass reached the identical score —
+`Critical`/`High`/**P0** — independently, citing the same two facts: it filed the missing
+timeout as a considered-but-not-promoted note (§6.2 of its report) and the missing `limit` cap as
+its own finding (`PERF-003`, `High`/`High`/**P1**), then used exactly that evidence — "each extra
+row is also an extra `isFollowing` round trip against the shared pool" — to justify `Critical`
+under the rubric's own definition ("critical path **and** ... saturation of a shared resource").
+Two agents, spawned separately, with no access to each other's output, independently found the
+same escalating evidence and reached the same score. §3.1's `High`/`High`/P1 is not wrong by its
+own lights — it scored the N+1 in isolation, before the unbounded-`limit` evidence was in the
+write-up at all — but on the question actually asked here (does the primary finding's *severity*
+reproduce run to run), the answer is: not with the original manual review, but yes, exactly,
+between the two independent blind passes.
+
+**The case-6 pool-arithmetic question reproduces exactly, including its score.** §3.1 checked
+one specific question — does `SetMaxIdleConns(10)`/no `SetMaxOpenConns` contradict a networked
+engine's connection ceiling — and correctly answered no, because SQLite has no such ceiling to
+exceed. §3.9 asked a different, related question about the same two lines — does an unbounded
+local pool risk internal contention (`SQLITE_BUSY`) against SQLite's single-writer semantics —
+and reported it as a finding, `Critical`/`Medium`/**P1**, explicitly caveated as drawing on
+general engine knowledge beyond what the `conceptual`-tier registry entry supplies. This run's
+blind pass asked the same question §3.9 did, cited the same two lines
+(`common/database.go:57,65`), the same absence of a busy-timeout or WAL configuration, and the
+same underlying mechanism (SQLite serializes all writers regardless of pool size) — and landed on
+the identical score: `Critical (structural)`/`Medium`/**P1**. This is the single strongest data
+point in this comparison: not just agreement that something is wrong, but an exact match on both
+scored axes and the derived priority, from two agents that never saw each other's reasoning,
+independently re-deriving §3.9's own correction to §3.1 rather than independently discovering
+something new. It also replicates, a second time, §3.9's finding that this is a different
+question than §3.1 asked of the same code, not a disagreement about the same question.
+
+**Secondary findings: substantial overlap, and real, non-contradictory divergence in what each
+run chose to surface.** Both blind passes flagged: missing indexes on the same foreign-key-shaped
+columns (§3.9: "`AuthorID`, `FavoriteID`, `FavoriteByID`, `FollowingID`, `FollowedByID`"; this
+run's `PERF-002`: the same five columns by name, plus `users.username`); the total absence of
+observability (metrics, tracing, benchmarks, load tests) as its own finding rather than only a
+confidence cap; and the identical `SEC-001` — a hardcoded JWT signing secret in `common/utils.go`
+carrying a `#nosec G101` suppression, run through a CI security job. One real, one-directional
+miss: §3.9 also reported a second `SEC-` finding (a bearer token accepted via URL query
+parameter) that this run's pass did not report — an omission, not a contradiction, since nothing
+in this run's report addresses that code path at all. One real, one-directional addition: this
+run reported two correctness findings with no counterpart in §3.9's write-up — `COR-001`
+(`users.username` has no uniqueness constraint) and `COR-002` (`FollowModel`/`FavoriteModel` lack
+a uniqueness constraint on their relationship columns, letting a `FirstOrCreate` race double-count
+a favorite or follow). Both are real, evidenced, and correctly filed under rule 8. Whether §3.9's
+run considered and silently declined these, or never looked, cannot be determined — this project
+recorded §3.9's findings in prose, not as the full raw report, so a completely faithful
+run-to-run diff of *everything each pass looked at* is not possible from what was preserved. That
+gap is itself worth naming as a lesson: recording only a summary of a comparison run, rather than
+its full output, is exactly the kind of information loss that makes a later consistency
+measurement weaker than it needed to be.
+
+**The derivation itself never diverged.** Every scored finding in this run's report — ten `PERF-`
+findings plus three adjacent findings — re-derives to the priority the matrix specifies for its
+stated severity and confidence, with no exception (`Critical`/`High`→P0, `High`/`High`→P1,
+`Critical`/`Medium`→P1, `Medium`/`High`→P2, `Low`/`Medium` and `Low`/`High`→P3,
+`Informational`/`Confirmed`→P3). Cross-checked against §3.1's and §3.9's own recorded scores, the
+same holds for both of them. This is exactly what the matrix is for: it is a mechanical lookup,
+and across three independent runs and thirteen individually-scored findings in this run alone,
+it produced zero disagreements about how severity-and-confidence should turn into priority. Any
+divergence between runs was in the judgment call of *what severity or confidence a finding
+deserves*, never in the arithmetic that follows from it — which is the correct place for
+independent review to disagree, and the wrong place for a rubric to be inconsistent.
+
+**No bug found in the skill's own tooling on this run.** Detection matched §3.1's, the false
+positives §3.3 fixed did not recur, and the blind agent's handling of the `grpc`/`protobuf` signal
+— verified as an unused transitive dependency and correctly declined rather than assumed —
+worked as `methodology/discovery.md` intends. Go is `deep` tier and this exact repository has now
+been reviewed four times total across Rounds 1–2 and two blind passes; a fifth review finding
+nothing new to fix in the tooling itself is the expected result at this point, not a null result.
+
+**The honest verdict.** On the question this section exists to answer — does an independent pass,
+run twice against the same code, converge — the answer is **partial convergence, and the
+partiality is informative rather than a failure**. The primary finding's *location and mechanism*
+reproduced perfectly across all three reviews. Its *severity score* reproduced exactly between the
+two blind passes and diverged from the original manual review for a reason already on record
+(§3.9) before this run existed — the manual review answered a narrower question than the evidence
+in the repository actually supported, and both blind passes independently found the wider
+evidence. The secondary case-6 finding reproduced exactly on every scored axis between the two
+blind passes, which is the strongest single piece of evidence available that the same evidence,
+independently read twice, produces the same rubric outcome. Secondary findings beyond those two
+overlapped substantially but not completely, in both directions — each run surfaced something the
+other did not, the same pattern already documented across §3.8–3.11's *different*-repository
+comparisons, now confirmed to hold *within* a single repository reviewed twice as well. This is
+one repository, one extra run. It supports the reproducibility claim for the parts of a review
+that matter most (what the top finding is, where it lives, and — once the same evidence is in
+hand — how severely it scores) more than it contradicts it, but a second data point of this shape,
+on a different repository or stack, would be needed before calling the question closed.
+
+### 3.19 Context cost: what routing actually saves, measured once
+
+`SKILL.md`'s central architectural bet is that loading only what the detected stack calls for
+(§Reference routing) beats loading every reference file for every review — but until now nothing
+had measured whether that is actually true, or by how much.
+
+**Method.** Reference-file size (lines and bytes of Markdown, excluding `templates/`) is a
+measurable, reproducible proxy for context cost — it is not a token count, and it excludes the
+much larger cost of reading the target repository's own source and writing the report, both of
+which are identical under either loading strategy and so do not affect the *comparison*. The
+naive baseline is every `.md` file under `skills/backend-performance-review/` except
+`templates/review-report.md` (loaded regardless, as the report structure, under both
+strategies): 8,183 lines, 454,598 bytes across every category, technology, principle, and
+methodology file the registry can ever point to. The routed set is the reference-routing table
+applied to a real, already-documented scenario —
+[`docs/examples/fastapi-postgres.md`](examples/fastapi-postgres.md)'s FastAPI + PostgreSQL +
+Redis + Celery service — assuming a full review touches every "Every review" file plus every
+usage-pattern row a typical API-with-a-database-and-a-cache-and-a-queue service triggers
+(latency, throughput, concurrency, resources, work-and-algorithms, api, data-access,
+async-and-blocking, serialization, connection-pools), `SKILL.md` and `rubrics.md` themselves,
+and the `postgres`, `redis`, `task-queue`, and `python` registry signals' `load:` lists,
+deduplicated: 26 files, 4,640 lines, 225,492 bytes.
+
+**Result.** The routed set is 56.7% of the naive baseline by lines, 49.6% by bytes — roughly
+half. Not the order-of-magnitude reduction "load only what the detected stack requires" might
+suggest in the abstract: this scenario has three `deep`-tier signals (Postgres, Redis, Python)
+and a broad usage-pattern footprint (an async API with a database, a cache, and a queue is close
+to the busiest realistic profile short of loading everything), so it exercises most of the
+"Every review" and usage-pattern rows regardless of routing. A narrower service — a single
+`conceptual`-tier datastore, no cache, no queue — would show a larger gap; a service touching
+every `deep`-tier signal in the registry at once would show a smaller one. This one data point is
+the upper bound on what routing saves for a stack this broad, not a general figure.
+
+**What this does not establish.** This is one synthetic scenario, not a real review's actual
+measured token usage — an instrumented run (recording real context consumption during an actual
+review, across a range of stack breadths from minimal to maximal) is the harder, more valuable
+version of this measurement and remains undone. It also does not capture what routing is really
+for: a Postgres-only service never loading `databases/document.md` at all is a correctness
+property (the report never reasons about a datastore that is not present), not only a cost
+saving, and that property held before this measurement and does not depend on it.
+
+### 3.20 Context cost, redone with a real tokenizer across four stack breadths
+
+§3.19 measured one scenario using file size (lines and bytes) as a proxy for context cost — an
+explicit stand-in for what §3.19 itself named as the harder, undone measurement: real token usage
+across a range of stack breadths. This section closes most of that gap: real subword tokenization
+in place of a byte proxy, across four scenarios spanning single-signal to broad, with the routed
+set for each computed by actually running `detect_stack.py` rather than hand-assembling a file
+list.
+
+**Method.** Four synthetic dependency-manifest fixtures, each `detect_stack.py` was actually run
+against (not a manually reasoned-through file list):
+
+| Scenario | Fixture | Signals detected |
+|:--|:--|:--|
+| A — minimal | `go.mod`, no datastore | `go` (`deep`) |
+| B — narrow | `requirements.txt`: FastAPI + `psycopg2` | `postgres`, `python` (`deep`); `rest` (`conceptual`) |
+| C — medium | `requirements.txt`: FastAPI + `psycopg2` + `redis` + `celery` | `postgres`, `redis`, `python` (`deep`); `task-queue` (`generic`); `rest` (`conceptual`) |
+| D — maximal | `package.json` (`pg`, `ioredis`, `kafkajs`, `@elastic/elasticsearch`, `express`) + a `docker-compose.yml` naming `postgres`/`redis`/`kafka`/`elasticsearch` images | `postgres`, `elasticsearch`, `redis`, `kafka`, `node` (`deep`); `rest`, `docker` (`conceptual`) |
+
+Each scenario's routed set is `detect_stack.py`'s real `references_to_load` output, unioned with
+the twelve files `SKILL.md`'s reference-routing table loads regardless of registry signal and
+that no manifest scan can detect: `SKILL.md` and `rubrics.md` themselves, the five "Every review"
+methodology files, and the five universal principle files (`latency`, `throughput`, `resources`,
+`concurrency-and-contention`, `work-and-algorithms`). It deliberately excludes usage-pattern rows
+that depend on what application code actually does rather than what manifests declare —
+`application/data-access.md` and `application/serialization.md`, notably — so every number below
+is a **reproducible lower bound** on what a real review of an equivalent codebase would route, not
+a prediction of the exact set. Tokens are counted with `tiktoken`'s `cl100k_base` encoding: a real,
+public, subword-level tokenizer, not Claude's own (no public library exposes that one), but a
+material improvement on a linear byte proxy — two files of equal byte size do not tokenize
+identically, and this measurement is the first in this project to reflect that. The naive baseline
+is unchanged in definition from §3.19 (every `.md` file under `skills/backend-performance-review/`
+except `templates/`) but larger in absolute size than §3.19's, since four `deep`-tier technology
+files were added between when §3.19 and this section were written: 52 files, 534,718 bytes,
+115,378 tokens.
+
+**Result.**
+
+| Scenario | Routed files | Bytes (% of naive) | Tokens (% of naive) |
+|:--|:--|:--|:--|
+| A — minimal | 15 | 133,104 (24.9%) | 29,319 (25.4%) |
+| B — narrow | 19 | 171,025 (32.0%) | 37,375 (32.4%) |
+| C — medium | 24 | 212,601 (39.8%) | 46,250 (40.1%) |
+| D — maximal | 28 | 258,765 (48.4%) | 56,027 (48.6%) |
+
+Real subword tokenization tracks the byte-based percentage closely at every point (within 0.5
+points each time) — this project's Markdown does not contain the kind of token-density skew
+(heavy code blocks, non-English text, repeated punctuation) that would make bytes a materially
+misleading proxy for it specifically, which is itself a useful, previously unconfirmed fact. The
+more important result is the **range**: token cost as a fraction of the naive baseline goes from
+25.4% for a single-signal service with no datastore to 48.6% for a service touching five
+`deep`-tier signals across four different registry categories (datastore, cache, broker, search)
+plus its runtime — confirming §3.19's qualitative prediction ("a narrower service would show a
+larger gap; a service touching every `deep`-tier signal at once would show a smaller one") with
+an actual measured spread rather than a single anchored point and a guess about the rest of the
+range.
+
+**A real detection gap surfaced while building scenario D.** The Node.js `pg` package — the most
+common Postgres driver in the Node ecosystem — matches no token in the `postgres` signal's
+`match:` list; `pg` is deliberately absent as a token elsewhere in the registry for being too
+short and too common a substring, but no longer token (`node-postgres`, the package's own project
+name, for instance) was added to cover it either. Scenario D's fixture had to trigger the signal
+via a `docker-compose.yml` image reference instead of its actual dependency file. This is a real,
+previously unknown false-negative gap, in the same family as the `sqlite-jdbc`/`org.xerial` one
+§3.13 found and this measurement did not set out to find — filed as its own issue rather than
+folded into this one, since fixing it is unrelated to context cost.
+
+**What this still does not establish.** Counting reference-file tokens offline is not the same as
+instrumenting a live, dispatched review and recording what its context window actually contains
+— that context also includes the target repository's own source, the growing conversation, and
+the report being composed, none of which this measurement touches, and all of which dominate the
+total over the reference files measured here. Nor is `cl100k_base` Claude's own tokenizer; the
+close agreement with the byte proxy observed above suggests the qualitative range would not shift
+much under Claude's actual tokenizer, but that is an inference from this corpus's characteristics,
+not a substitute for measuring it directly. The harder version of this measurement — real,
+API-metered context consumption from an actual dispatched review, across a comparable range of
+stack breadths — remains undone.
+
+### 3.21 A second blind pass on a different repository and stack — inter-run consistency, extended
+
+§3.18 blind-passed one repository (`gin-realworld`, Go) a second time and found substantial but
+partial convergence. Its own honest verdict named exactly what it could not establish: "a second
+data point of this shape, on a different repository or stack, would be needed before calling the
+question closed." This section is that second data point: `gothinkster/spring-boot-realworld-example-app`
+(JVM, §3.13) blind-passed a second time.
+
+**Setup.** A fresh clone of `gothinkster/spring-boot-realworld-example-app` resolved to
+`ee17e31aafe733d98c4853c8b9a74d7f2f6c924a`, confirmed by `git rev-parse HEAD`. Unlike §3.18's
+setup, §3.13's original write-up never recorded the commit it ran against — a gap this section
+inherits rather than can close; the repository is a static example project with no activity
+since 2022, so a mismatch is unlikely but not provable. A fresh `general-purpose` agent, spawned
+with no memory of this session, was given only the unmodified `SKILL.md` and the clone path,
+told it was a full review of a real, unmodified JVM backend, and explicitly instructed not to
+read `docs/evaluation.md`, `docs/roadmap.md`, `CHANGELOG.md`, or any git history of either
+repository — the same blindness protocol as §3.8–3.18. It was also asked to write its complete
+report to a file rather than only summarize it back — closing the specific gap §3.18 named in
+its own write-up ("recording only a summary... is exactly the kind of information loss that
+makes a later consistency measurement weaker than it needed to be"). One accretion in the
+skill's own coverage exists between the two runs: SQLite was `conceptual` tier with no dedicated
+reference file at §3.13's time and is `deep` tier with a full `technology/sqlite.md` now (this
+project's own promotion work, `CHANGELOG.md`). JVM was already `deep` tier at both points — a
+stable control. That accretion turns out to matter for what follows.
+
+**All four of §3.13's original findings, plus its adjacent security finding, reproduced by
+location and mechanism — five for five.** §3.13's PERF-001 (unbatched GraphQL resolvers, no
+`DataLoader`) is this run's PERF-004, citing the identical resolver classes
+(`CommentDatafetcher`, `ArticleDatafetcher`) and the same missing-batching mechanism; both score
+`Critical`/`P0`. §3.13's PERF-002 (no index on any foreign-key or filter column, naming
+`tags.name`, `article_tags.article_id`/`tag_id`, `comments.article_id`,
+`follows.user_id`/`follow_id`) is this run's PERF-001, naming the same columns — this run adds
+that `follows` has no primary key at all, a fact §3.13's brief summary did not mention having
+checked. Both score `High`/`P1`. §3.13's SEC-001 (JWT secret hardcoded in
+`application.properties`) is this run's SEC-001, same file, same line, same recommendation.
+Three of five findings reproduced with no change in score at all.
+
+**Two of five reproduced on location and mechanism but diverged sharply in severity — and the
+divergence has a specific, named cause: the skill's own reference content matured between the
+two runs.** §3.13's PERF-003 (SQLite behind a default HikariCP/Tomcat pool, no journal-mode or
+busy-timeout configuration) scored `High`/`P1`, explicitly **capped at `Medium` confidence**
+because, in the agent's own words at the time, `registry.yaml`'s note said "SQLite has no
+dedicated technology file and concurrency questions should be flagged as unknowns." This run's
+equivalent, PERF-006, scores `Critical`/`High`/**P0** — a full severity-and-confidence escalation
+— citing `technology/sqlite.md` §2 directly and by name as the source for the claim that a
+pool sized for a client-server engine provides no real write concurrency for SQLite and that its
+zero-second default `busy_timeout` converts a momentary write collision into an immediate
+failure. §3.13's PERF-004 (an unbounded per-tag loop inside one write transaction) scored
+`Medium`/`P2`. This run's equivalent, PERF-003, scores `Critical`/`High`/**P0**, citing
+`technology/sqlite.md` §2's "exactly one writer... by design" as the reason the same unbounded
+loop is now read as holding the system's single most contended resource for an unbounded
+duration, not merely as an unbounded database round trip in isolation. Neither run's blind agent
+had access to the other's reasoning; the divergence is not two reviewers disagreeing about the
+same evidence — it is the same evidence, read against a materially different amount of reference
+content, because the skill itself changed in between. **This is a different kind of evidence
+than §3.18 gathered.** §3.18 asked whether the same skill, run twice, converges. This asks
+whether a real tier promotion — the actual product of the work this project spends most of its
+effort on — measurably changes what a real review concludes about real code, in the direction
+the promotion was meant to produce. Here, it did: both severity escalations move *toward* the
+better-supported answer (SQLite's single-writer semantics are a documented, checkable fact, not
+a judgment call), not away from it, and both cite the new reference file as their reason.
+
+**Secondary findings: this run reported four scored findings with no counterpart in §3.13's
+write-up — but §3.13 was recorded as a "brief" summary, not the full report, so whether these
+are genuinely new or were found and not included in that summary cannot be determined, the same
+caveat §3.18 raised about its own comparison.** PERF-002 (`Critical`/`P0` — an unconditional
+multi-table join plus an unbounded exact `COUNT` on every article-list request), PERF-005
+(`High`/`P1` — the comment-fetch queries are missing the `LIMIT` clause their own sibling
+article queries correctly apply), PERF-007 (`High`/`P1` — offset pagination has no upper bound,
+unlike the existing limit cap), and PERF-008 (`Medium`/`P2` — no observability exists anywhere in
+the repository, filed as its own finding rather than only a confidence cap). All four are real,
+evidenced, and correctly filed. This is the same asymmetric-overlap pattern §3.8–3.18 documented
+in every prior comparison: each independent run surfaces something the other did not, in a
+different repository and a different stack, now for a fourth time.
+
+**The derivation itself never diverged.** Every scored performance finding in this run — eight
+of them — re-derives to the priority the matrix specifies for its stated severity and confidence
+with no exception: `Critical`/`High`→P0 (three instances), `High`/`High`→P1 (three instances),
+`Medium`/`High`→P2, `Low`/`High`→P3. `SEC-001` is correctly left unscored on the performance
+rubric per rule 8. This is the fourth independent run in this project's evaluation history (after
+§3.1/§3.9/§3.18's three on `gin-realworld`) to produce zero disagreements between a finding's
+severity-and-confidence and its derived priority — the matrix continues to be a mechanical
+lookup, never a place independent judgment leaks in.
+
+**No bug found in the skill's own tooling on this run.** `org.xerial:sqlite-jdbc` and
+`jdbc:sqlite:` — the exact detection gap §3.13 found and fixed at the time — correctly resolved
+this run's architecture table to `SQLite / deep`, confirming that fix has held since. The agent
+correctly treated Spring Boot, Spring MVC, Spring Security, MyBatis, and the DGS GraphQL
+framework as reduced-depth analysis at `conceptual` tier, exactly as `registry.yaml` declares
+them, rather than overclaiming depth the skill does not have reference content for.
+
+**The honest verdict.** Combined with §3.18, this project now has two inter-run comparisons, on
+two repositories and two stacks. Where §3.18 found the primary finding's *location and mechanism*
+reproduce exactly and its *severity* reproduce between two blind passes at the same point in the
+skill's evolution, this comparison finds all five of the original run's findings reproduce by
+location and mechanism, and adds a new, complementary result: when the skill's own reference
+content grows between two runs of the *same* code, the severity a later run assigns moves, and
+moves toward the better-supported answer, citing the new content by name as its reason. That is
+evidence the tier-promotion work this project spends most of its effort on does what it is meant
+to do, not just that two runs of an unchanged skill agree with each other. Secondary findings
+again overlapped only partially and in both directions, the same pattern now confirmed across
+four independent comparisons on four different repositories. The commit-pinning gap in §3.13's
+original record — the one piece of rigor §3.18 had that this comparison could not fully match —
+is itself a lesson worth carrying forward: every future comparison run should record its pinned
+commit at the time, not reconstruct it later from a static repository's low likelihood of having
+changed.
+
+### Recording results
+
+For each run, record: repository and commit, mode, references loaded, findings with scores,
+any fabrication, any cargo-cult recommendation, and time or token cost. Failures are more
+interesting than successes and should be recorded in at least as much detail — §3.3 is the
+template for that.
+
+Where skill-evaluation tooling is available in the target agent environment, these cases
+should be wired up as an eval suite so they run on every change to the methodology.
+
+---
+
+## 4. Regression protection
+
+The highest-value guard is a **false-positive corpus**: for every reported false positive, add
+the triggering code shape to a fixture set and confirm the skill no longer reports it. Round 1
+(§3.3) produced the first entries, now automated in `tests/test_detect_stack_regressions.py`
+(run via `python -m unittest discover -s tests`, and on every push/PR in
+`.github/workflows/checks.yml`'s `detection-regressions` job):
+
+1. A lockfile hash fragment containing the substring `rq` must not trigger the `task-queue`
+   signal, and one containing `koa` must not trigger the `rest` signal (regression test for the
+   `go.sum` base64-collision bugs — the exact hash shapes found in
+   `gothinkster/golang-gin-realworld-example-app`'s `go.sum`, reproduced verbatim in the fixture).
+2. A CI YAML file using shell `echo` commands, and a compose file containing the word
+   "logging", must not trigger the `rest` signal's Go-framework detection (regression test for
+   the `gin`/`echo` bare-word collision — the exact shapes found in
+   `fastapi/full-stack-fastapi-template`'s CI workflow and `compose.override.yml`).
+3. A quoted registry match token containing an escaped inner quote (`"\"x\":"`) must parse to
+   the literal `"x":`, not to the four characters `\"x\":` (regression test for the parser's
+   `_strip_quotes` unescaping bug).
+4. One real dependency declaration per (signal, runtime) combination that a `deep`-tier
+   signal's own `match:` list already implies it should cover must match that signal
+   (`DriverCoverageTests`). Added after three false negatives of the same shape —
+   `sqlite-jdbc` (§3.13), EF Core SqlServer (the .NET blind pass), and the Node.js `pg`
+   package (§3.20) — were each found separately, one at a time, by accident during
+   unrelated evaluation passes. An audit run once across every `deep`-tier signal's already
+   supported runtimes found six more at once; this fixture is that audit, committed so a
+   future promotion missing its dominant driver in some runtime fails in CI instead of
+   waiting to be found the same way again.
+5. Sequelize's `config/config.json` and Knex's `knexfile.js` must be read for content, and
+   the dialect each names (`"dialect": "sqlite"`, `client: 'pg'`) must match the right
+   signal (`OrmConfigFileTests`) — the same audit that produced item 4 found these two ORMs
+   name no datastore in `package.json` at all, the same shape of gap Prisma's
+   `schema.prisma` already covered (§3.16). A generic bare `config.json` must *not* be read
+   outside the conventional `config/` path, to avoid treating an arbitrary project config
+   file as manifest evidence.
+
+Each fixture was verified to actually fail against the pre-fix code (`detect_stack.py` and
+`registry.yaml` as they stood before §3.3's fixes) before being accepted as a real regression
+guard, not merely a test that happens to pass against the current code. The corresponding
+narrowing fixes are also covered in the same direction: a fully-qualified `gin-gonic/gin`/
+`labstack/echo` module path, `django-rq`/`python-rq`, and a genuine `"koa":` dependency
+declaration must still match — the fix narrowed detection, it did not remove it.
+
+False positives are the failure mode that erodes trust fastest. A reviewer who reads three
+irrelevant findings stops reading the fourth, and the one that mattered was the fourth. Bug 2 in
+§3.3 is the sharper warning: a false *negative* (a signal that silently never fires) produces no
+irrelevant output to notice at all, and is caught only by deliberately checking that a claimed
+detection capability actually detects something.
+
+---
+
+## 5. Known evaluation gaps
+
+Stated rather than left implicit:
+
+- **Case 2 (no significant problem) is reframed, not literally satisfied** — see §3.7. Eight
+  repositories now, eight legitimate findings; whether a true zero-finding real backend exists at
+  all is now an open question rather than an assumed baseline.
+- **The blind pass (§3.8–3.11, §3.13–3.16) now covers eight repositories, but each only once
+  except one.** §3.8–3.11 were still set up by the author (choosing the repositories and writing
+  the prompts) even though the reviewing agents had no access to this session's prior findings;
+  §3.13–3.16 went one step further and had no prior author review of the target repository to
+  compare against at all, only the choice of repository and the prompt. §3.18 and §3.21
+  blind-passed two of these repositories a second time — see the bullet below for what they
+  found.
+- **Rounds 1–2 tested detection plus reasoning at the same standard as the methodology, largely
+  performed or directly supervised by the author** rather than dispatching the unmodified
+  `SKILL.md` procedure to a fully independent agent across every case. §3.8–3.11 and §3.13–3.16
+  are the exception.
+- **Inter-run consistency measured on two repositories and two stacks — stronger than one data
+  point, still not a general result.** §3.18 blind-passed `gin-realworld` (Go) a second time, at
+  the identical pinned commit reviewed in §3.1 and §3.9, and found the primary finding's location
+  and mechanism reproduced exactly across all three independent reviews, its severity and derived
+  priority reproduced exactly between the two blind passes, and the priority matrix applied with
+  zero disagreements. §3.21 blind-passed `spring-boot-realworld-example-app` (JVM) a second time
+  and found all five of the original pass's findings (§3.13) reproduced by location and mechanism,
+  the matrix again applying with zero disagreements — and surfaced a new result neither §3.18 nor
+  any earlier comparison had: two findings' severity moved sharply, in both cases *because the
+  skill's own reference content matured between the two runs* (SQLite's tier promotion to `deep`,
+  landing after §3.13 and before §3.21), with the later, better-informed run citing the new
+  reference file directly as its reason and moving toward the better-supported score. Secondary
+  findings still varied run to run in both comparisons, each surfacing at least one real thing the
+  other missed. Two repositories, two extra runs: still not proof consistency holds universally,
+  but the second comparison points the same direction as the first, and adds direct evidence that
+  tier promotions measurably improve — not merely change — what a later review concludes.
+- No comparison against a human expert baseline.
+- **Context cost measured with a real tokenizer across four scenarios, but still not from a
+  live instrumented run.** §3.20 replaced §3.19's byte proxy with real `tiktoken` counts across
+  four stack breadths, computed from `detect_stack.py`'s actual output rather than a
+  hand-assembled file list: 25.4% of the naive baseline for a single-signal service up to 48.6%
+  for one touching five `deep`-tier signals across four categories at once. What remains
+  undone is the harder version: real, API-metered context consumption recorded from an actual
+  dispatched review — which also includes the target repository's own source and the growing
+  conversation, both of which dominate the total over the reference files measured here — and
+  a tokenizer count using Claude's own tokenizer rather than `cl100k_base` as a close proxy.
+
+Contributions that close any of these are welcome, and are worth more than additional
+reference content.

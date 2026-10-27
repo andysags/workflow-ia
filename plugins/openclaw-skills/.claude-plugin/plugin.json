@@ -1,0 +1,8 @@
+{
+  "name": "openclaw-skills",
+  "version": "0.1.0",
+  "description": "Skills github, spike et skill-creator issus d'OpenClaw (MIT), utilisés par les agents Architecte et DevOps de workflow-ia.",
+  "author": { "name": "OpenClaw Foundation" },
+  "repository": "https://github.com/openclaw/openclaw",
+  "license": "MIT"
+}

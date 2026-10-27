@@ -1,0 +1,60 @@
+{
+  "name": "workflow-ia",
+  "description": "Créer un site web complet, du prompt au déploiement, avec une équipe d'agents IA spécialisés.",
+  "owner": {
+    "name": "Andy Sagbo",
+    "url": "https://github.com/andysags"
+  },
+  "plugins": [
+    {
+      "name": "workflow-ia",
+      "source": "./plugins/workflow-ia",
+      "description": "Orchestrateur /creer-site et les 9 agents de l'équipe. Installe automatiquement les plugins ci-dessous."
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "source": "./plugins/ui-ux-pro-max",
+      "description": "Design system, palettes, typographies et règles UX par stack (nextlevelbuilder, MIT)."
+    },
+    {
+      "name": "openclaw-skills",
+      "source": "./plugins/openclaw-skills",
+      "description": "Skills github, spike et skill-creator (OpenClaw, MIT)."
+    },
+    {
+      "name": "copywriting-kit",
+      "source": "./plugins/copywriting-kit",
+      "description": "Rédaction de pages de site sans claims inventés (Sergey Skripko, MIT)."
+    },
+    {
+      "name": "seo-audit",
+      "source": "./plugins/seo-audit",
+      "description": "Audit SEO technique du code et des pages (Sergey Skripko, MIT)."
+    },
+    {
+      "name": "backend-design",
+      "source": "./plugins/backend-design",
+      "description": "Discipline backend : conception, sécurité, données (sheitabrk, MIT)."
+    },
+    {
+      "name": "backend-performance-review",
+      "source": "./plugins/backend-performance-review",
+      "description": "Revue de performance backend (Sanoy24, MIT)."
+    },
+    {
+      "name": "solofounder",
+      "source": "./plugins/solofounder",
+      "description": "Vérification, TDD et débogage méthodique (Oleksandr Karpinskyi, MIT). Hook SessionStart retiré."
+    },
+    {
+      "name": "agent-discussion",
+      "source": "./plugins/agent-discussion",
+      "description": "Débat entre agents via un fichier partagé (MIT)."
+    },
+    {
+      "name": "adaptive-agent",
+      "source": "./plugins/adaptive-agent",
+      "description": "Amélioration continue des skills et profil utilisateur (LJ Li, MIT)."
+    }
+  ]
+}
