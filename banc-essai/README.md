@@ -31,7 +31,9 @@ PARALLELE=3 banc-essai/lancer.sh                      # 3 cas en même temps
 
 Chaque cas tourne dans `banc-essai/resultats/<date>/<cas>/`, avec les plugins du repo (`--plugin-dir plugins`), donc **la version en cours de modification**, pas celle de la marketplace.
 
-**Coût :** comptez plusieurs dollars par cas (environ 4 $ pour le premier test, avant l'ajout de la revue finale). Lancez d'abord 2 ou 3 cas.
+**Coût :** environ 4 à 4,50 $ et 25 à 30 minutes par cas (mesuré au Sprint 1). Lancez d'abord 2 ou 3 cas.
+
+**Limite d'usage :** avec un abonnement Claude (et non une clé API), plusieurs cas en parallèle peuvent épuiser la limite de la période. Au Sprint 1, 3 cas en parallèle l'ont atteinte avant la fin de la revue finale. Préférez `PARALLELE=1` (la valeur par défaut), ou une clé API.
 
 Pour régénérer un rapport sans relancer : `node banc-essai/rapport.mjs banc-essai/resultats/<date>`.
 

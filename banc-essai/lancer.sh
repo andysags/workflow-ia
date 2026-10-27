@@ -21,7 +21,7 @@ PARALLELE="${PARALLELE:-1}"
 if [ $# -gt 0 ]; then cas=("$@"); else cas=($(cd "$BANC/cas" && ls *.md | sed 's/\.md$//')); fi
 
 ALLOWED=(
-  Read Write Edit Glob Grep Agent Skill TodoWrite
+  Read Write Edit Glob Grep Agent Skill TodoWrite TaskStop KillShell BashOutput
   "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(python *)" "Bash(python3 *)"
   "Bash(bash *)" "Bash(git *)" "Bash(ls *)" "Bash(mkdir *)" "Bash(cat *)" "Bash(curl *)"
   "Bash(cd *)" "Bash(kill *)" "Bash(sleep *)" "Bash(grep *)" "Bash(wc *)"

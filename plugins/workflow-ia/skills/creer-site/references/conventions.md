@@ -35,6 +35,8 @@ sites/<slug>/
 7. **Secrets** : jamais dans un fichier versionné, jamais dans une réponse. Variables d'environnement uniquement.
 8. **Versions** : vérifie les versions des outils avec `npm view <paquet> version` plutôt que de te fier à ta mémoire.
 9. **Commandes simples** : chaque commande non reconnue déclenche une demande d'autorisation chez le client. Donc une seule commande simple par appel Bash, qui commence par le programme lancé (`npm view astro version`, `npm run build --prefix <chemin>/site`, `python3 <chemin>/search.py ...`). Pas de boucle `for`, pas de variable shell (`S=...; python3 $S`), pas de `&&` ni de `;` pour enchaîner, pas de `cd` vers un dossier hors du dossier projet (jamais `cd /tmp`). Pour plusieurs paquets, une commande par paquet ; pour un autre dossier, utilise `--prefix` ou un chemin absolu.
+10. **Serveur d'aperçu** : lance-le avec l'option `run_in_background` de l'outil Bash, sous la forme `npm run preview --prefix <dossier-projet>/site -- --port <port>` (sans `&`, sans parenthèses, sans `cd`). Vérifie qu'il répond avec `curl -sI http://localhost:<port>/`. Arrête-le à la fin avec l'outil d'arrêt de tâche (TaskStop, ou KillShell selon la version), jamais avec `pkill`. Ports réservés pour éviter les conflits : QA 4321, critique 4323, vérificateur 4322.
+11. **Version de Node** : avant de fixer la version d'un framework, compare `node -v` au champ `engines` du paquet (`npm view astro engines`). Choisis la dernière version compatible avec le Node local, et fixe dans `netlify.toml` une `NODE_VERSION` compatible aussi.
 
 ## Lignes de statut attendues
 

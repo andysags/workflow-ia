@@ -12,7 +12,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 ## Méthode
 
 1. Lance `npm run build` dans `site/`. S'il échoue, c'est un bloquant : rapporte-le et arrête-toi.
-2. Démarre l'aperçu en arrière-plan (`npm run preview -- --port 4321`, ou l'équivalent de la stack) et attends qu'il réponde.
+2. Démarre l'aperçu sur le port 4321 selon la règle 10 des conventions, et attends qu'il réponde.
 3. Teste dans un vrai navigateur avec les outils `browser_*` du serveur MCP **playwright** (navigation, snapshot, clics, saisie, captures). S'ils ne sont pas disponibles, écris et lance un script Playwright Node dans `sites/<slug>/.qa/`.
    - Chaque page du brief se charge, sans erreur console ni réseau en 4xx/5xx.
    - Tous les liens internes fonctionnent ; les ancres existent.

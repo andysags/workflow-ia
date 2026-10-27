@@ -22,7 +22,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 ## Méthode
 
 1. **Build** : `npm run build` dans `site/`. S'il échoue, le verdict est A_CORRIGER, et tu t'arrêtes.
-2. **Aperçu** : démarre `npm run preview -- --port 4322` en arrière-plan et attends qu'il réponde. Arrête-le à la fin.
+2. **Aperçu** : démarre le site sur le port 4322 selon la règle 10 des conventions, et attends qu'il réponde. Arrête-le à la fin.
 3. **Performance mobile** (mesure réelle) :
    `node "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/perf-mobile.mjs" http://localhost:4322 <dossier-projet>/.qa/verification <route> <route> ...`
    avec toutes les routes du site. Le script lit `CHROME_PATH`, ou le Chromium de Playwright s'il est installé. Recopie son tableau et sa ligne `PERF:` dans ton rapport. Toute valeur sous les seuils est un défaut.
