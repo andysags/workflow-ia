@@ -48,6 +48,8 @@ lancer_cas() {
       ${MODELE:+--model "$MODELE"} \
       --output-format stream-json --verbose > run.jsonl 2> run.err || echo "code $?" >> run.err
   )
+  # Un serveur d'aperçu oublié par un agent occuperait le port du cas suivant (et servirait le mauvais site).
+  pkill -f "$dossier/.*(astro|vite).* preview" 2>/dev/null || true
   echo $((SECONDS - debut)) > "$dossier/duree_s"
   echo "✔ $nom ($((SECONDS - debut)) s)"
 }
