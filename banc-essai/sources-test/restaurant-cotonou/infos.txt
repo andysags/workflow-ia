@@ -1,0 +1,10 @@
+Bonjour, voici les infos pour mon site.
+
+Adresse : Rue 12.345 (exemple fictif), Haie Vive, Cotonou. À côté de la pharmacie, portail vert.
+Téléphone et WhatsApp : +229 01 00 00 00 00 (numéro fictif de test)
+Ouvert du mardi au dimanche, de 11h30 à 22h30. Fermé le lundi.
+Le samedi soir il y a de la musique live (à partir de 20h).
+Je suis Afi, j'ai ouvert le restaurant en 2019 avec ma fille. On cuisine comme à la maison, au feu de bois pour les grillades.
+La réservation de table se fait par WhatsApp. Pour les groupes de plus de 10 personnes, appeler 2 jours avant.
+
+(Données fictives créées pour le banc d'essai workflow-ia.)
