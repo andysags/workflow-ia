@@ -9,16 +9,18 @@ Légende :
 
 | Agent | Skills utilisés | Statut |
 |---|---|---|
-| **Orchestrateur** (`/workflow-ia:creer-site`) | Pilote les 9 agents, `adaptive-agent:skill-review` (option en fin de projet) | 📦 |
+| **Orchestrateur** (`/workflow-ia:creer-site`) | Pilote les 11 agents, `adaptive-agent:skill-review` (option en fin de projet) | 📦 |
 | **1. brainstorming** | `product-management:product-brainstorming` | ⭐ 🔁 méthode intégrée |
 | **2. architecte** | `backend-design:boring-by-default`, `openclaw-skills:spike` | 📦 |
 | **3. designer** | `ui-ux-pro-max:ui-ux-pro-max` (script de recherche), `ui-ux-pro-max:design-system` | 📦 |
 | **3. redacteur** | `copywriting-kit:brand-voice`, `copywriting-kit:landing-page-copy`, `copywriting-kit:copy-proof-check` | 📦 |
 | **4. dev-front** | `ui-ux-pro-max:ui-ux-pro-max` (`--stack`), `ui-ux-pro-max:ui-styling`, `solofounder:systematic-debugging`, `solofounder:verification` | 📦 |
 | **4. dev-back** | `backend-design:*` (think-before-coding, error-handling, auth, idempotency, data-modeling, testing), `backend-performance-review`, `solofounder:verification` | 📦 |
-| **5. qa** | serveur MCP `playwright` ; `seo-audit:technical-seo-code-audit` | ⭐ 🔁 script Playwright Node ; 📦 |
+| **5. qa** | serveur MCP `playwright` ; `seo-audit:technical-seo-code-audit` ; script `perf-mobile.mjs` | ⭐ 🔁 script Playwright Node ; 📦 |
 | **6. securite** | `backend-design:security-discipline`, `backend-design:auth-and-authorization` ; scan approfondi `/claude-security` | 📦 ; ⭐ optionnel |
-| **7. devops** | `openclaw-skills:github` ; `netlify-skills` | 📦 ; ⭐ 🔁 `npx netlify-cli` |
+| **7. critique** | Aucun skill : regard neuf, captures Playwright, test des 5 secondes et test de banalité (adapté d'agency-agents) | 📦 |
+| **7. verificateur** | Script `perf-mobile.mjs` (Lighthouse mobile ralenti), contre-vérification des rapports QA et Sécurité (adapté d'agency-agents) | 📦 |
+| **8. devops** | `openclaw-skills:github` ; `netlify-skills` | 📦 ; ⭐ 🔁 `npx netlify-cli` |
 
 Également disponibles pour l'utilisateur : `agent-discussion` (débat entre agents de plateformes différentes), `openclaw-skills:skill-creator` (écrire de nouveaux skills), les autres skills de `ui-ux-pro-max` (`brand`, `design`, `banner-design`, `slides`), `seo-audit` et `copywriting-kit`.
 

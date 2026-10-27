@@ -1,6 +1,6 @@
 # workflow-ia : un site web en un prompt
 
-Décrivez le site que vous voulez en une phrase. Une équipe de 9 agents IA s'occupe du reste, du cahier des charges jusqu'à la mise en ligne sur Netlify, en vous demandant votre avis aux moments importants.
+Décrivez le site que vous voulez en une phrase. Une équipe de 11 agents IA s'occupe du reste, du cahier des charges jusqu'à la mise en ligne sur Netlify, en vous demandant votre avis aux moments importants.
 
 ```
 /workflow-ia:creer-site Un site vitrine pour mon restaurant à Cotonou, avec le menu et la réservation de table
@@ -91,9 +91,12 @@ Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de t
 | 2 | Architecte | Choix techniques (`02-architecture.md`) | — |
 | 3 | Designer + Rédacteur | Charte graphique (`03-design.md`), textes et SEO (`04-contenu.md`) | **Valider**, donner les infos manquantes (adresse, prix…) |
 | 4 | Dev front (+ Dev back si besoin) | Le site (`site/`) | — |
-| 5 | QA | Tests dans un vrai navigateur (`07-rapport-qa.md`), jusqu'à 3 tours de corrections | — |
-| 6 | Sécurité | Audit (`08-rapport-securite.md`). **Bloque la mise en ligne** en cas de faille grave | Accepter ou non un scan approfondi |
-| 7 | DevOps | Repo GitHub et mise en ligne Netlify (`09-deploiement.md`) | **Valider** la mise en ligne |
+| 5 | QA | Tests dans un vrai navigateur et **performance sur mobile ralenti** (`07-rapport-qa.md`), jusqu'à 3 tours de corrections | — |
+| 6 | Sécurité | Audit, y compris les failles typiques du code écrit par une IA (`08-rapport-securite.md`). **Bloque la mise en ligne** en cas de faille grave | Accepter ou non un scan approfondi |
+| 7 | Critique + Vérificateur | Revue finale : un regard neuf qui refuse le design « passe-partout » (`10-revue-critique.md`), et une contre-vérification de toutes les affirmations avec preuves (`11-verification.md`) | — |
+| 8 | DevOps | Repo GitHub et mise en ligne Netlify (`09-deploiement.md`) | **Valider** la mise en ligne |
+
+**Mode automatique :** ajoutez `--auto` à la fin de votre demande pour que l'équipe décide seule à chaque étape (toutes ses décisions sont notées dans `etat.json`). Le site est alors mis en ligne en brouillon uniquement.
 
 Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
 
@@ -104,13 +107,17 @@ Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les for
 - Les mentions légales sont des modèles à faire relire.
 - Le nom de domaine personnalisé se configure ensuite dans Netlify.
 
+## Qualité mesurée
+
+Le dossier [`banc-essai/`](banc-essai/README.md) fait passer 10 demandes de référence (restaurant, salon, ONG, avocat, école, artisan, photographe, paroisse, boutique, festival) dans le pipeline complet, et compare les sites obtenus : build, verdicts, performance mobile, accessibilité, coût.
+
 ## Contenu du repo
 
 Ce repo est une **marketplace Claude Code** (`.claude-plugin/marketplace.json`) qui contient 10 plugins :
 
 | Plugin | Rôle | Origine |
 |---|---|---|
-| `workflow-ia` | Orchestrateur `/creer-site` et les 9 agents | ce projet |
+| `workflow-ia` | Orchestrateur `/creer-site` et les 11 agents | ce projet (critique, vérificateur et contrôles IA de la sécurité adaptés de [The Agency](https://github.com/msitarzewski/agency-agents), MIT) |
 | `ui-ux-pro-max` | Design system, palettes, typographies, règles UX | [nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
 | `openclaw-skills` | `github`, `spike`, `skill-creator` | [OpenClaw](https://github.com/openclaw/openclaw) |
 | `copywriting-kit` | Rédaction de pages | Sergey Skripko |

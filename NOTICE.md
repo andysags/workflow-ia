@@ -14,6 +14,8 @@ Ce repo redistribue les plugins suivants. Chacun garde sa licence d'origine dans
 | `plugins/agent-discussion` | https://github.com/cyrusxyl/agent-discussion | MIT | 0.1.0 | aucune |
 | `plugins/adaptive-agent` | https://github.com/truenorth-lj/adaptive-agent-skill | MIT | — | aucune |
 
+Les agents `critique` et `verificateur` de `plugins/workflow-ia`, ainsi que la section « Failles typiques du code écrit par une IA » de l'agent `securite`, sont adaptés et traduits des agents « UI Finish-Gate Reviewer », « Reality Checker » et « AI-Generated Code Security Auditor » de https://github.com/msitarzewski/agency-agents (commit `b37b5bb`, MIT, © 2025 AgentLand Contributors).
+
 Plugins recommandés mais **non redistribués** (installés depuis leur marketplace d'origine) :
 
 | Plugin | Marketplace | Licence |

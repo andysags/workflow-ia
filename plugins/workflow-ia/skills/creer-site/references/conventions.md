@@ -18,8 +18,10 @@ sites/<slug>/
 ├── site/                   ← code du site (Dev front, Dev back)
 ├── 07-rapport-qa.md        ← QA
 ├── 08-rapport-securite.md  ← Sécurité
+├── 10-revue-critique.md    ← Critique
+├── 11-verification.md     ← Vérificateur
 ├── 09-deploiement.md       ← DevOps
-└── .qa/, .spikes/          ← fichiers de travail (captures, prototypes)
+└── .qa/, .spikes/          ← fichiers de travail (captures, mesures de performance, prototypes)
 ```
 
 ## Règles pour tous les agents
@@ -43,4 +45,6 @@ sites/<slug>/
 | dev-back | `BACK: OK` / `BACK: ECHEC` |
 | qa | `QA: VALIDE` / `QA: A_CORRIGER` |
 | securite | `SECURITE: AUTORISE` / `SECURITE: BLOQUE` |
+| critique | `CRITIQUE: PASS` / `CRITIQUE: HOLD` |
+| verificateur | `VERIFICATION: PRET` / `VERIFICATION: A_CORRIGER` |
 | devops | `DEPLOIEMENT: OK <url>` / `DEPLOIEMENT: EN_ATTENTE <raison>` |
