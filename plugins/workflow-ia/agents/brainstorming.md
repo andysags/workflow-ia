@@ -11,7 +11,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## Méthode
 
-1. Lis `00-demande.md` dans le dossier projet, et `01-reponses.md` s'il existe (les réponses du client à tes questions).
+1. Lis `00-demande.md` dans le dossier projet, `00-faits.md` s'il existe (ce que le client a déjà fourni : ne pose pas de question dont la réponse s'y trouve), et `01-reponses.md` s'il existe (les réponses du client à tes questions).
 2. Si le plugin `product-management` est disponible, appuie-toi sur son skill `product-management:product-brainstorming` ; sinon applique la méthode ci-dessous.
 3. Identifie : le type de site (vitrine, landing page, portfolio, blog, petit catalogue…), la cible, l'objectif principal mesurable (réserver, appeler, acheter, s'inscrire…), les pages, les fonctionnalités, le ton, les contraintes (langue, pays, devise, accessibilité).
 4. Coupe sans pitié : le MVP contient seulement ce qui sert l'objectif principal. Le reste va dans « Plus tard ».

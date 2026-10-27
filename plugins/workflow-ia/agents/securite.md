@@ -12,7 +12,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## Contrôles
 
-1. **Dépendances** : `npm audit --omit=dev --json` dans `site/`. Les vulnérabilités `critical` et `high` exploitables en production sont bloquantes.
+1. **Dépendances** : `npm audit --omit=dev --json` dans `site/`. Les vulnérabilités `critical` et `high` exploitables en production sont bloquantes. Si le site traite des images au build (`astro:assets`, `sharp`, photos de `sources/medias/`), les failles du traitement d'images deviennent pertinentes : exige une version corrigée, ou bloque si aucune n'est compatible et que les images ne viennent pas du client.
 2. **Secrets** : cherche clés API, jetons, mots de passe, fichiers `.env` committés, dans `site/` et l'historique git s'il existe (motifs `sk-`, `AKIA`, `ghp_`, `-----BEGIN`, `api[_-]?key`, `secret`, `token`, `password`). Vérifie que `.env` est dans `.gitignore`.
 3. **En-têtes HTTP** : `netlify.toml` ou `_headers` doivent définir `Content-Security-Policy` (sans `unsafe-eval`, `unsafe-inline` limité au strict nécessaire), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` ou `frame-ancestors`.
 4. **Code front** : `innerHTML`/`set:html` avec des données externes, liens `target="_blank"` sans `rel="noopener"`, scripts tiers chargés sans intégrité, données personnelles exposées.

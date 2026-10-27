@@ -1,7 +1,7 @@
 ---
 name: creer-site
 description: Crée un site web complet à partir d'un seul prompt, du cahier des charges jusqu'au déploiement sur Netlify, en pilotant une équipe de 11 agents spécialisés (brainstorming, architecte, designer, rédacteur, dev front, dev back, QA, sécurité, critique, vérificateur, DevOps). Utiliser quand l'utilisateur veut créer, générer ou lancer un site web, une landing page, un site vitrine ou un portfolio, ou reprendre un projet de site existant dans sites/.
-argument-hint: "<description du site>" [--auto] [--premium] | reprendre <slug>
+argument-hint: "<description du site>" [--sources <fichiers ou URL>] [--auto] [--premium] | reprendre <slug>
 ---
 
 # Créer un site web en un prompt
@@ -24,6 +24,7 @@ Conventions partagées par tous les agents : `${CLAUDE_PLUGIN_ROOT}/skills/creer
 
 ## Budget et sobriété
 
+- Le collecteur, le rédacteur et le développeur lisent `00-faits.md` eux-mêmes : ne le recopie pas dans tes consignes.
 - Chaque agent a un modèle par défaut adapté à sa tâche (Sonnet pour la plupart, Haiku pour le DevOps). Si `$ARGUMENTS` contient `--premium` (retire-le de la description), passe `model: "opus"` à l'outil Agent pour `designer`, `dev-front`, `securite` et `critique` : meilleure qualité, coût environ doublé. Note le mode dans `etat.json`.
 - Toi aussi, tu es facturé à chaque tour. Ne lis pas les livrables en entier : pour résumer au client, lis seulement les sections utiles (verdict, liste des corrections) avec `Grep` ou `Read` limité. Ne relis pas un fichier déjà lu.
 - Transmets aux agents des consignes courtes : le chemin du dossier projet, l'itération, la liste des corrections. Ils lisent eux-mêmes les livrables.
@@ -45,6 +46,8 @@ Le mode automatique s'active si `$ARGUMENTS` contient `--auto` (retire-le de la 
 2. Si la description est vide, demande au client de décrire son site en une ou deux phrases (type, activité, objectif, ville ou pays).
 3. Vérifie les prérequis : `bash "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/prerequis.sh"`. Si un outil obligatoire manque, explique comment l'installer et arrête-toi. Les manques optionnels (gh, Netlify) sont signalés et le travail continue.
 4. Choisis un slug à partir de la demande, crée `sites/<slug>/`, écris `00-demande.md` (le prompt exact) et `etat.json`.
+5. **Éléments existants du client.** S'il a donné `--sources` (fichiers, URL) ou collé du contenu dans sa demande, garde-les. Sinon, en mode interactif, demande-lui une seule fois s'il a déjà des éléments : photos, menu ou catalogue, flyer, documents, page Facebook ou fiche Google, ancien site. Ils évitent des dizaines de `[À COMPLÉTER]`. S'il n'en a pas, continue.
+6. S'il y a des sources, lance `workflow-ia:collecteur` (texte collé enregistré dans `sources/texte-client.md`). Résume ce qui a été trouvé et, en mode interactif, fais trancher les conflits. Tous les agents suivants liront `00-faits.md`.
 
 ## Étape 1/8 : cahier des charges (agent `brainstorming`)
 
@@ -85,10 +88,11 @@ QA et Sécurité lisent le même build sans le modifier : lance-les **dans le m�
 
 1. ✋ **Validation 3** : montre au client l'aperçu local (donne la commande `cd sites/<slug>/site && npm run preview`), les captures de `.qa/` et `.qa/critique/`, les verdicts QA, Sécurité, Critique et Vérification, les mesures de performance mobile, et les `[À COMPLÉTER]` restants. Demande : « Mettre en ligne (production) », « Mettre en ligne en brouillon », « Pas encore ». Demande aussi s'il veut un repo GitHub pour le code.
 2. Lance `workflow-ia:devops` avec ses choix.
-3. Si `DEPLOIEMENT: EN_ATTENTE` (jeton Netlify absent, par exemple), explique au client exactement quoi faire, puis comment reprendre : `/workflow-ia:creer-site reprendre <slug>`.
+3. Note dans `etat.json` le `site_id`, l'URL et le mode (`brouillon` ou `production`) donnés par la ligne `DEPLOIEMENT:` : `/workflow-ia:modifier-site` redéploiera au même endroit.
+4. Si `DEPLOIEMENT: EN_ATTENTE` (jeton Netlify absent, par exemple), explique au client exactement quoi faire, puis comment reprendre : `/workflow-ia:creer-site reprendre <slug>`.
 
 ## Fin
 
-Présente un bilan court : URL en ligne, ce qui a été construit, les scores de performance mobile, les `[À COMPLÉTER]` restants, les prochaines étapes conseillées (nom de domaine, images réelles, notifications des formulaires) et, en mode automatique, les décisions prises à la place du client. Mets `etat.json` à `termine`.
+Présente un bilan court : URL en ligne, comment faire évoluer le site (`/workflow-ia:modifier-site <slug> "<demande>"`, avec `--sources` pour donner photos ou documents), ce qui a été construit, les scores de performance mobile, les `[À COMPLÉTER]` restants, les prochaines étapes conseillées (nom de domaine, images réelles, notifications des formulaires) et, en mode automatique, les décisions prises à la place du client. Mets `etat.json` à `termine`.
 
 Propose enfin, en option, une amélioration continue : le skill `adaptive-agent:skill-review` peut analyser la session pour améliorer les skills de l'équipe.
