@@ -36,6 +36,7 @@ Classe la demande dans une ou plusieurs catégories, et choisis la chaîne d'age
 | Médias | intégrer les photos de `sources/medias/` | `dev-front` (images dans `src/assets/` via `astro:assets`, jamais dans `public/`) | QA ciblée + performance mobile des pages touchées + poids des images servies (WebP, 300 Ko maximum) |
 | Design | couleur, police, style d'une section | `designer` (met à jour `03-design.md` et `design-tokens.css`), puis `dev-front` | QA ciblée + critique (deuxième passage) |
 | Structure | nouvelle page, nouvelle section, navigation | `redacteur` et `designer` si besoin (en parallèle), puis `dev-front` | QA complète + critique |
+| Domaine | « mettez le site sur monsite.bj » | `devops` seul (section « Nom de domaine » : association, enregistrements DNS à donner au client, URL du site mise à jour, redéploiement) | contrôle DNS et HTTPS du script `domaine.mjs` |
 | Fonctionnalité | formulaire, paiement, réservation en ligne, données | `architecte` (complète `02-architecture.md`), puis `dev-front` et/ou `dev-back` | QA complète + **Sécurité** + vérificateur |
 
 - Pas de montée de version majeure du framework ou d'une dépendance dans une modification, sauf si elle est indispensable pour la réaliser. Dans ce cas, annonce-la au client (en mode automatique, note-la dans `decisions_auto`), et elle déclenche la Sécurité.

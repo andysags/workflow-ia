@@ -99,7 +99,10 @@ Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils 
 /workflow-ia:modifier-site <nom-du-site> "Change les horaires : fermé le lundi"
 /workflow-ia:modifier-site <nom-du-site> "Voici mes vraies photos" --sources photos/
 /workflow-ia:modifier-site <nom-du-site> "Ajoute une page Événements"
+/workflow-ia:modifier-site <nom-du-site> "Mets le site sur chezmamaafi.bj"
 ```
+
+**Nom de domaine :** achetez-le d'abord chez un registraire (pour `.bj`, `.ci`, `.sn`… : un registraire agréé du pays). Le DevOps le relie au site et vous donne exactement les lignes à créer dans la zone DNS. Il vérifie ensuite que le domaine et le HTTPS fonctionnent.
 
 Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le designer), les contrôles sont proportionnés à la modification (la Sécurité intervient dès que du code, un formulaire ou une dépendance change), et le site est remis en ligne **au même endroit**. Chaque modification est notée dans `12-modifications.md`, et peut être annulée.
 
@@ -152,7 +155,6 @@ Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
 - Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]` : donnez vos éléments avec `--sources` pour les remplir.
 - Sans vos photos, les images sont des emplacements à remplacer. Elle ne prend jamais d'images sur internet.
 - Les mentions légales sont des modèles à faire relire.
-- Le nom de domaine personnalisé se configure ensuite dans Netlify.
 
 ## Qualité mesurée
 

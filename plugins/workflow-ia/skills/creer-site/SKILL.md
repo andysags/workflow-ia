@@ -109,6 +109,6 @@ QA et Sécurité lisent le même build sans le modifier : lance-les **dans le m�
 
 ## Fin
 
-Présente un bilan court : URL en ligne, comment faire évoluer le site (`/workflow-ia:modifier-site <slug> "<demande>"`, avec `--sources` pour donner photos ou documents), ce qui a été construit, les scores de performance mobile, les `[À COMPLÉTER]` restants, les prochaines étapes conseillées (nom de domaine, images réelles, notifications des formulaires) et, en mode automatique, les décisions prises à la place du client. Mets `etat.json` à `termine`.
+Présente un bilan court : URL en ligne, comment faire évoluer le site (`/workflow-ia:modifier-site <slug> "<demande>"`, avec `--sources` pour donner photos ou documents), ce qui a été construit, les scores de performance mobile, les `[À COMPLÉTER]` restants, les prochaines étapes conseillées (nom de domaine : `/workflow-ia:modifier-site <slug> "Mets le site sur monsite.bj"` une fois le domaine acheté, images réelles, notifications des formulaires) et, en mode automatique, les décisions prises à la place du client. Mets `etat.json` à `termine`.
 
 Propose enfin, en option, une amélioration continue : le skill `adaptive-agent:skill-review` peut analyser la session pour améliorer les skills de l'équipe.
