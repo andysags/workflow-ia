@@ -1,23 +1,35 @@
 # Skills et plugins des agents
 
-Statut : ✅ installé dans le repo · 🔌 plugin déclaré dans `.claude/settings.json` · 💡 proposé, pas encore installé · ❌ aucun outil, à écrire nous-mêmes
+Statut :
+- ✅ skill installé dans le repo (`.claude/skills/`)
+- 🔌 plugin déclaré dans le repo (`.claude/settings.json`) : Claude Code propose de l'activer à l'ouverture du projet
+- 👤 plugin installé sur le compte claude.ai (catalogue Anthropic Directory) : non déclarable dans le repo, faute de source publique
+- ❌ rien d'existant, à écrire nous-mêmes
 
 ## Bilan par agent
 
 | Agent | Skills / plugins | Statut |
 |---|---|---|
-| 1. Brainstorming / Product | Plugin **Product Management** (Anthropic) : `product-brainstorming`, `write-spec` | 💡 |
-| 2. Architecte | `spike` (OpenClaw) : prototype jetable pour valider une approche | ✅ |
+| **Orchestrateur** | **solofounder** : `flow-composer` (compose les étapes), `role-generator` (génère les rôles spécialisés), `exception-enforcement`, `verification`, `mockup-server` | 👤 |
+| **Orchestrateur** | **agent-discussion** : débat entre agents via un fichier partagé | 👤 |
+| 1. Brainstorming / Product | **product-management** (Anthropic) : `product-brainstorming`, `write-spec`, `competitive-brief` | 🔌 |
+| 2. Architecte | `spike` : prototype jetable pour valider une approche | ✅ |
+| 2. Architecte | **backend-design** : `boring-by-default`, agent `boring-tech-advisor` (refuse une techno inutilement complexe) | 👤 |
 | 3. Designer UI/UX | `ui-ux-pro-max`, `design-system`, `brand`, `design`, `banner-design` | ✅ |
-| 4. Rédacteur / SEO | Plugins **Website Copywriting & Positioning** et **SEO Audit** | 💡 |
+| 4. Rédacteur | **Website Copywriting & Positioning** | 👤 à installer |
+| 4. SEO | **SEO Audit** | 👤 à installer |
 | 5. Dev front | `ui-ux-pro-max` (règles par stack : Astro, Next.js…), `ui-styling` (Tailwind, shadcn/ui) | ✅ |
-| 6. Dev back | Plugin **backend-design** (actif sur le compte, pas déclaré dans le repo) | 💡 |
-| 7. QA | Plugin **playwright** (Microsoft) pour piloter un vrai navigateur | 💡 |
-| 8. Sécurité | Plugin **claude-security** (Anthropic) | 🔌 |
-| 9. DevOps | `github` (OpenClaw) : PR, CI, releases via la CLI `gh` | ✅ |
-| 9. DevOps (hébergement) | Plugin **Netlify**, ou un skill de déploiement à écrire | 💡 / ❌ |
-| Transverse | `skill-creator` (OpenClaw) : écrire et valider nos propres skills d'agents | ✅ |
-| Transverse | `slides` : présentations (non rattaché à un agent) | ✅ |
+| 6. Dev back | **backend-design** : conception d'API, schémas de base de données, gestion des erreurs, idempotence | 👤 |
+| 6. Dev back | **backend-performance-review** : détection des goulots d'étranglement (requêtes N+1…) | 👤 |
+| 7. QA | **playwright** (Microsoft) : pilote un vrai navigateur, clique, prend des captures | 🔌 |
+| 7. QA | **solofounder** : `verification`, `tdd-methodology`, `systematic-debugging` | 👤 |
+| 8. Sécurité | **claude-security** (Anthropic) : scan multi-agents et patchs vérifiés | 🔌 + 👤 |
+| 8. Sécurité | **backend-design** : `security-discipline`, agent `security-reviewer` (contrôle rapide après chaque modification) | 👤 |
+| 9. DevOps : GitHub | `github` : PR, CI, releases | ✅ |
+| 9. DevOps : hébergement | **netlify-skills** (Netlify) : déploiement, formulaires, fonctions, base de données, domaines | 🔌 |
+| Transverse | `skill-creator` : écrire et valider nos propres skills d'agents | ✅ |
+| Transverse | **adaptive-agent** : `skill-review` (fait évoluer les skills avec l'usage), `build-user-profile` (mémorise le profil de l'utilisateur) | 👤 |
+| Transverse | `slides` : présentations | ✅ |
 
 ## Détail des sources
 
@@ -54,3 +66,26 @@ Statut : ✅ installé dans le repo · 🔌 plugin déclaré dans `.claude/setti
 - **Licence** : propriétaire Anthropic. Le plugin n'est **pas copié** dans le repo, il est seulement déclaré dans `.claude/settings.json`.
 - **Installation manuelle** si besoin : `/plugin install claude-security@claude-plugins-official`
 - **Usage** : `/claude-security` → scan multi-agents, vérification de chaque faille trouvée, puis génération de patchs.
+
+### Plugins déclarés dans `.claude/settings.json`
+
+| Plugin | Marketplace (repo GitHub) | Remarque |
+|---|---|---|
+| `claude-security` | `anthropics/claude-plugins-official` | Licence propriétaire Anthropic |
+| `playwright` | `anthropics/claude-plugins-official` | Serveur MCP de Microsoft, lancé via `npx` |
+| `product-management` | `anthropics/knowledge-work-plugins` | Contient aussi des connecteurs (Linear, Notion…) optionnels |
+| `netlify-skills` | `netlify/context-and-tools` | Repo officiel de Netlify. Il faudra un compte et un jeton Netlify pour déployer |
+
+### Plugins du compte claude.ai (Anthropic Directory)
+
+Ils sont installés sur le compte du propriétaire du projet, pas dans le repo. Un collaborateur doit les ajouter depuis le catalogue claude.ai.
+
+| Plugin | Auteur | Licence | Source publique |
+|---|---|---|---|
+| `solofounder` (v0.5.0) | non renseigné | MIT | aucune |
+| `agent-discussion` (v0.1.0) | Cyrus Liu | non renseignée | https://github.com/cyrusxyl/agent-discussion |
+| `adaptive-agent` | LJ Li | non renseignée | https://github.com/truenorth-lj/adaptive-agent-skill |
+| `backend-design` (v0.2.0) | sheitabrk | MIT | https://github.com/sheitabrk/backend-design |
+| `backend-performance-review` (v2.0.0) | Sanoy24 | MIT | https://github.com/Sanoy24/backend-performance-review (avec marketplace) |
+| Website Copywriting & Positioning | Sergey Skripko | — | aucune (catalogue uniquement) |
+| SEO Audit | Sergey Skripko | — | aucune (catalogue uniquement) |
