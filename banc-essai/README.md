@@ -73,5 +73,12 @@ banc-essai/tester-agent.sh securite-paiement  # un test
 | Test | Agent | Ce qui est vérifié |
 |---|---|---|
 | `securite-paiement` | securite | Une page de paiement Mobile Money mal sécurisée est **bloquée**, et les 5 failles sont citées : clé secrète dans le navigateur, inscription confirmée sans vérification serveur, montant modifiable dans l'URL, CSP trop large, `innerHTML` |
+| `collecteur-hors-sujet` | collecteur | Sur 3 photos envoyées par un restaurant, seule celle du plat est retenue dans `sources/medias/`. Les 2 photos d'ordinateur sont décrites et écartées |
+| `redacteur-sans-invention` | redacteur | Un brief de salon de coiffure sans aucune info : aucun prix, numéro, horaire ni avis inventé, des `[À COMPLÉTER]` à la place, et le pack Afrique appliqué (FCFA, WhatsApp, ARTCI) |
+| `qa-liens-contact` | qa | Une page de maquis avec 4 liens WhatsApp ou téléphone faux (espaces, `+`, numéro tronqué, lien sans numéro) : la QA demande des corrections et les signale |
 
-Pour ajouter un test : un dossier `agents/<test>/` avec `projet/` (le dossier donné à l'agent, jamais modifié : il est copié à chaque essai) et `attendu.md`. L'en-tête d'`attendu.md` contient : `agent`, `consigne`, `fichier` (le livrable à contrôler), `statut` (la ligne de statut attendue) et `mots` (des expressions régulières qui doivent apparaître dans le livrable).
+Pour ajouter un test : un dossier `agents/<test>/` avec `projet/` (le dossier donné à l'agent, jamais modifié : il est copié à chaque essai) et `attendu.md`. L'en-tête d'`attendu.md` contient `agent`, `consigne` et `fichier` (le livrable à contrôler), puis des contrôles, tous facultatifs :
+- `statut` : la ligne de statut attendue ;
+- `mots` : des expressions régulières qui doivent apparaître dans le livrable ;
+- `interdits` : des expressions qui ne doivent **pas** y apparaître, comme un faux numéro ou un faux prix ;
+- `fichiers` : un nombre de fichiers attendu, par exemple `sources/medias/* = 1`.

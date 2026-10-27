@@ -45,7 +45,11 @@ sites/<slug>/
     - Regroupe : un seul build après une série de modifications, pas un build par fichier.
     - N'affiche pas de longues sorties : pour un build, regarde surtout la fin (les erreurs) ; pour un JSON Lighthouse, lis seulement les audits en échec.
     - En mode correction ou en re-vérification, ne refais que ce qui concerne la liste reçue.
-12. **Version de Node** : avant de fixer la version d'un framework, compare `node -v` au champ `engines` du paquet (`npm view astro engines`). Choisis la dernière version compatible avec le Node local, et fixe dans `netlify.toml` une `NODE_VERSION` compatible aussi.
+12. **Version de Node et failles connues** : avant de fixer la version d'un framework, compare `node -v` au champ `engines` du paquet.
+    - Si la toute dernière version exige un Node plus récent, ne redescends pas d'emblée à la version majeure précédente. Regarde d'abord les versions récentes de la même majeure, une par une (`npm view astro@7.4.1 engines`, puis `7.4.0`…) : un correctif de sécurité est souvent publié avec un Node minimal plus ancien.
+    - Choisis la version la plus récente qui est compatible avec le Node local **et** qui n'a aucune faille `critical` ou `high` (`npm audit --omit=dev` après installation).
+    - Une version compatible mais vulnérable ne se choisit pas. Si aucune version n'est à la fois compatible et sûre, garde la version sûre, et signale qu'il faut mettre à jour Node en local.
+    - Fixe dans `netlify.toml` une `NODE_VERSION` compatible.
 
 ## Lignes de statut attendues
 
