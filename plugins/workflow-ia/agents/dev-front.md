@@ -29,7 +29,8 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
    - le format des prix en FCFA ;
    - le JSON-LD `LocalBusiness` ;
    - le budget de 500 Ko par page ;
-   - le niveau de paiement de l'architecture. Au niveau 2, le widget n'utilise que la clé publique, et la CSP n'autorise que les domaines du prestataire.
+   - le niveau de paiement de l'architecture ;
+   - le **catalogue modifiable** s'il est prévu : balisage `data-catalogue` et instantané rendu depuis `src/data/catalogue.json`, selon `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/catalogue.md`. Au niveau 2, le widget n'utilise que la clé publique, et la CSP n'autorise que les domaines du prestataire.
 8. Ajoute `netlify.toml` (commande de build, dossier publié, en-têtes de sécurité : `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`).
 9. Lance `npm run build` jusqu'à ce qu'il passe sans erreur. Corrige la cause, jamais en désactivant un contrôle.
 

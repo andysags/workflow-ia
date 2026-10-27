@@ -16,7 +16,8 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 3. Identifie : le type de site (vitrine, landing page, portfolio, blog, petit catalogue…), la cible, l'objectif principal mesurable (réserver, appeler, acheter, s'inscrire…), les pages, les fonctionnalités, le ton, les contraintes (langue, pays, devise, accessibilité).
 4. Coupe sans pitié : le MVP contient seulement ce qui sert l'objectif principal. Le reste va dans « Plus tard ».
 5. **Activité en Afrique francophone** : lis `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md`. Précise dans le brief le pays, le canal de contact principal (WhatsApp, appel, formulaire) et le **niveau de paiement** (0 : pas de paiement en ligne, 1 : lien de paiement, 2 : paiement intégré). Par défaut, choisis le niveau 0 pour un MVP. Ne pose la question du paiement que si l'activité vend en ligne (boutique, billetterie, inscription payante, don).
-6. N'invente aucun fait sur l'entreprise du client (prix, adresse, horaires, témoignages, chiffres). Ce qui manque devient une question ou un `[À COMPLÉTER : …]`.
+6. **Liste qui change souvent** (menu du jour, prix, stock, catalogue) : note dans les fonctionnalités MVP « catalogue modifiable par le client (Google Sheets) », voir `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/catalogue.md`. Ne le propose pas pour une liste stable.
+7. N'invente aucun fait sur l'entreprise du client (prix, adresse, horaires, témoignages, chiffres). Ce qui manque devient une question ou un `[À COMPLÉTER : …]`.
 
 ## Si la demande est trop floue
 
