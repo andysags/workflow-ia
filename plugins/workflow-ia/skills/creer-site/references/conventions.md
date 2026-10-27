@@ -8,6 +8,8 @@ Chaque site vit dans `sites/<slug>/`, relatif au dossier où l'utilisateur a lan
 sites/<slug>/
 ├── etat.json               ← géré par l'orchestrateur uniquement
 ├── 00-demande.md           ← prompt d'origine de l'utilisateur
+├── 00-faits.md             ← Collecteur : faits sourcés tirés des éléments du client
+├── sources/                ← originaux fournis par le client ; sources/medias/ = photos retenues
 ├── 01-questions.md         ← questions du Brainstorming (si besoin)
 ├── 01-reponses.md          ← réponses de l'utilisateur
 ├── 01-brief.md             ← Brainstorming
@@ -21,6 +23,7 @@ sites/<slug>/
 ├── 10-revue-critique.md    ← Critique
 ├── 11-verification.md     ← Vérificateur
 ├── 09-deploiement.md       ← DevOps
+├── 12-modifications.md     ← journal des /modifier-site
 └── .qa/, .spikes/          ← fichiers de travail (captures, mesures de performance, prototypes)
 ```
 
@@ -28,7 +31,7 @@ sites/<slug>/
 
 1. **Ne travaille que dans le dossier projet reçu.** Ne modifie jamais un autre dossier.
 2. **Lis les livrables précédents** avant de produire le tien. Ne modifie pas le livrable d'un autre agent : si tu y vois un problème, signale-le dans ta réponse.
-3. **N'invente aucun fait sur le client** (prix, adresses, horaires, témoignages, chiffres, diplômes). Écris `[À COMPLÉTER : …]`.
+3. **N'invente aucun fait sur le client** (prix, adresses, horaires, témoignages, chiffres, diplômes). Si `00-faits.md` existe, c'est **la seule source** des faits : utilise les faits « certain », signale ceux « à confirmer » dans ta réponse. Sinon, écris `[À COMPLÉTER : …]`.
 4. **Écris en français**, sauf si le brief fixe une autre langue pour le site.
 5. **Preuves avant affirmations** : un build, un test ou un audit se prouve par la sortie réelle de la commande.
 6. **Ta réponse finale est courte** : ce que tu as produit, le chemin des fichiers, la ligne de statut demandée par ton rôle. Les détails vont dans les fichiers.
@@ -48,6 +51,7 @@ sites/<slug>/
 
 | Agent | Ligne finale |
 |---|---|
+| collecteur | `FAITS: <n> faits, <n> à confirmer, <n> médias, <n> sources illisibles` |
 | brainstorming | `QUESTIONS_EN_ATTENTE` ou chemin de `01-brief.md` |
 | architecte | `DEV_BACK: OUI` / `DEV_BACK: NON` |
 | dev-front | `BUILD: OK` / `BUILD: ECHEC` |
@@ -56,4 +60,4 @@ sites/<slug>/
 | securite | `SECURITE: AUTORISE` / `SECURITE: BLOQUE` |
 | critique | `CRITIQUE: PASS` / `CRITIQUE: HOLD` |
 | verificateur | `VERIFICATION: PRET` / `VERIFICATION: A_CORRIGER` |
-| devops | `DEPLOIEMENT: OK <url>` / `DEPLOIEMENT: EN_ATTENTE <raison>` |
+| devops | `DEPLOIEMENT: OK <url> SITE_ID: <id> MODE: brouillon|production` / `DEPLOIEMENT: EN_ATTENTE <raison>` |

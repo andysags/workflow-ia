@@ -83,6 +83,26 @@ Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de t
 /workflow-ia:creer-site reprendre <nom-du-site>
 ```
 
+### Donner vos éléments existants
+
+Photos, menu ou catalogue (même photographié), flyer, documents, texte, page Facebook ou ancien site : donnez-les avec `--sources`. L'agent **collecteur** en tire une fiche de faits, chaque fait avec sa source, et l'équipe s'en sert au lieu de laisser des `[À COMPLÉTER]`.
+
+```
+/workflow-ia:creer-site Un site pour mon restaurant à Cotonou --sources menu.jpg infos.txt photo-salle.jpg
+```
+
+Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils sont ailleurs (Téléchargements, Bureau…), Claude Code vous demandera l'autorisation de les copier dans le projet.
+
+### Faire évoluer un site
+
+```
+/workflow-ia:modifier-site <nom-du-site> "Change les horaires : fermé le lundi"
+/workflow-ia:modifier-site <nom-du-site> "Voici mes vraies photos" --sources photos/
+/workflow-ia:modifier-site <nom-du-site> "Ajoute une page Événements"
+```
+
+Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le designer), les contrôles sont proportionnés à la modification (la Sécurité intervient dès que du code, un formulaire ou une dépendance change), et le site est remis en ligne **au même endroit**. Chaque modification est notée dans `12-modifications.md`, et peut être annulée.
+
 ## Ce qui se passe
 
 | Étape | Agent | Ce qu'il produit | Votre rôle |
@@ -114,8 +134,8 @@ Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
 
 ## Ce que l'équipe ne fait pas (encore)
 
-- Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]`.
-- Les images sont des emplacements à remplacer par vos photos.
+- Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]` : donnez vos éléments avec `--sources` pour les remplir.
+- Sans vos photos, les images sont des emplacements à remplacer. Elle ne prend jamais d'images sur internet.
 - Les mentions légales sont des modèles à faire relire.
 - Le nom de domaine personnalisé se configure ensuite dans Netlify.
 

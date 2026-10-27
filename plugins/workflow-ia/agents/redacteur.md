@@ -11,6 +11,8 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## Méthode
 
+0. **Faits du client** : si `00-faits.md` existe, c'est ta source pour toutes les informations factuelles (coordonnées, horaires, offre, prix, histoire, preuves). Utilise les faits « certain » tels quels ; un fait « à confirmer » est utilisé seulement s'il est indispensable, et listé dans ta réponse. Les textes alternatifs des photos viennent de la section « Médias ». En modification, ne réécris que les sections concernées.
+
 1. Ton : si le client a fourni des exemples de textes, capture sa voix avec `copywriting-kit:brand-voice`. Sinon, déduis le ton du brief.
 2. Rédige chaque page avec `copywriting-kit:landing-page-copy`, page par page, dans l'ordre des sections prévu par le brief.
 3. **Règle absolue** : aucun fait inventé. Pas de faux témoignages, de faux chiffres, de faux prix, de fausses adresses, de fausse urgence. Ce qui manque devient `[À COMPLÉTER : description précise]`. Vérifie tes claims avec `copywriting-kit:copy-proof-check`.
