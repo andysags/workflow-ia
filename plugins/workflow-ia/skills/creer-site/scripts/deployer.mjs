@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Déploie le site d'un projet workflow-ia sur Netlify, en une seule commande simple.
-// Usage : node deployer.mjs <dossier-projet> [--site <site_id>] [--nom <nom-netlify>] [--prod] [--sans-build]
+// Usage : node deployer.mjs <dossier-projet> [--site <site_id>] [--nom <nom-netlify>] [--prod] [--accepter-incomplet] [--sans-build]
 //
 // Étapes : jeton présent → build → contrôle du dossier publié (site/dist) → création du site si besoin
 // → envoi de site/dist uniquement → vérification HTTP de l'URL.
@@ -9,7 +9,7 @@
 //   DEPLOIEMENT: EN_ATTENTE <raison>
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
@@ -17,6 +17,7 @@ const projet = args[0] && !args[0].startsWith("--") ? resolve(args[0]) : null;
 const option = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
 const prod = args.includes("--prod");
 const sansBuild = args.includes("--sans-build");
+const accepterIncomplet = args.includes("--accepter-incomplet");
 
 function fin(ligne, code = 0) { console.log(ligne); process.exit(code); }
 function attente(raison) { fin(`DEPLOIEMENT: EN_ATTENTE ${raison}`); }
@@ -51,18 +52,22 @@ if (!sansBuild) {
 // 2. Contrôle du dossier publié (mêmes règles que le hook garde-deploiement)
 console.log("2/5 Contrôle du dossier publié…");
 if (!existsSync(join(dist, "index.html"))) attente(`${dist} ne contient pas index.html`);
-let nombre = 0;
+let nombre = 0, aCompleter = 0;
 const interdit = (n) => n.endsWith(".jsonl") || /^\d\d-.*\.md$/.test(n) || n === "etat.json" ||
   n === ".env" || n.startsWith(".env.") || n === ".git" || n === "node_modules";
 (function parcourir(d) {
   for (const n of readdirSync(d)) {
     if (interdit(n)) attente(`fichier interne dans le dossier publié : ${join(d, n)}`);
     const c = join(d, n);
-    if (statSync(c).isDirectory()) parcourir(c); else nombre++;
+    if (statSync(c).isDirectory()) parcourir(c);
+    else { nombre++; if (n.endsWith(".html")) aCompleter += (readFileSync(c, "utf8").match(/À COMPLÉTER/g) ?? []).length; }
   }
 })(dist);
 if (nombre > 2000) attente(`${nombre} fichiers dans ${dist} : ce n'est probablement pas le bon dossier`);
-console.log(`    ${nombre} fichiers à publier.`);
+console.log(`    ${nombre} fichiers à publier, ${aCompleter} [À COMPLÉTER] visibles.`);
+// En production, des cases vides visibles par les visiteurs se décident avec le client, pas par défaut.
+if (prod && aCompleter > 0 && !accepterIncomplet)
+  attente(`${aCompleter} [À COMPLÉTER] visibles dans le site : complétez-les (modifier-site), publiez en brouillon, ou relancez avec --accepter-incomplet si le client l'accepte`);
 
 // 3. Site Netlify
 let siteId = option("--site");

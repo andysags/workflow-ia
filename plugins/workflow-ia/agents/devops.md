@@ -36,6 +36,8 @@ Le déploiement se fait **uniquement** avec le script du plugin, qui enchaîne t
 - Premier déploiement :
   `node "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/deployer.mjs" <dossier-projet> --nom <nom-unique>` (ajoute `--prod` pour la production)
 
+En production, le script refuse de publier un site qui affiche encore des `[À COMPLÉTER]`. Ajoute `--accepter-incomplet` **seulement** si l'orchestrateur te transmet l'accord explicite du client. Sinon, recopie le refus (`EN_ATTENTE`).
+
 Avant de lancer le script, si l'URL de production (`https://<nom>.netlify.app`, ou le domaine du client) diffère de celle configurée dans le site (`site` dans `astro.config.mjs`, canonical, `og:url`, sitemap, JSON-LD), mets-la à jour : sinon les liens canoniques pointent ailleurs.
 
 Recopie la dernière ligne du script (`DEPLOIEMENT: …`) telle quelle comme ligne de statut. Si elle dit `EN_ATTENTE`, explique au client la raison donnée, sans la contourner : n'essaie **jamais** de déployer à la main avec `netlify deploy`, et ne cherche pas à lire le jeton (pas de `printenv`, `env`, `echo $NETLIFY_AUTH_TOKEN`).
