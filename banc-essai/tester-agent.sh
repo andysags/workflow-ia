@@ -29,14 +29,14 @@ for t in "${tests[@]}"; do
   ( cd "$D" && claude -p "Lance l'agent workflow-ia:$agent avec l'outil Agent. Dossier projet : $D/projet. Consigne : $consigne Recopie ensuite sa dernière ligne de statut telle quelle, sans rien faire d'autre." \
       --plugin-dir "$PLUGINS" --permission-mode acceptEdits \
       --allowedTools Read Write Edit Glob Grep Agent "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(git *)" "Bash(ls *)" "Bash(cat *)" "Bash(grep *)" \
-      --output-format json > run.json 2> run.err )
+      --output-format stream-json --verbose > run.jsonl 2> run.err )
   rapport="$D/projet/$fichier"; ok=1; notes=()
-  if grep -q "$statut" "$D/run.json" 2>/dev/null || grep -q "$statut" "$rapport" 2>/dev/null; then notes+=("statut ✅"); else notes+=("statut ❌ (attendu « $statut »)"); ok=0; fi
+  if grep -q "$statut" "$D/run.jsonl" 2>/dev/null || grep -q "$statut" "$rapport" 2>/dev/null; then notes+=("statut ✅"); else notes+=("statut ❌ (attendu « $statut »)"); ok=0; fi
   while IFS= read -r m; do
     [ -z "$m" ] && continue
     if grep -qiE "$m" "$rapport" 2>/dev/null; then notes+=("✅ $m"); else notes+=("❌ $m"); ok=0; fi
   done < <(mots "$A")
-  cout="$(node -e 'try{const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log((r.total_cost_usd??0).toFixed(2))}catch{console.log("?")}' "$D/run.json")"
+  cout="$(node -e 'try{const l=require("fs").readFileSync(process.argv[1],"utf8").trim().split("\n").map(JSON.parse).filter(e=>e.type==="result").pop();console.log((l?.total_cost_usd??0).toFixed(2))}catch{console.log("?")}' "$D/run.jsonl")"
   [ $ok = 1 ] && echo "✔ $t réussi ($cout \$)" || { echo "✘ $t échoué ($cout \$)"; echec=1; }
   printf '   %s\n' "${notes[@]}"
 done
