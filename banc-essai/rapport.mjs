@@ -80,6 +80,15 @@ for (const cas of readdirSync(racine).sort()) {
   const dist = projet ? join(projet, "site", "dist") : null;
   const html = dist ? fichiers(dist, (f) => f.endsWith(".html")) : [];
   const aCompleter = html.reduce((n, f) => n + (lire(f).match(/À COMPLÉTER/g) ?? []).length, 0);
+  // Liens de contact (pack Afrique) : wa.me avec un numéro en chiffres seuls, tel: au format international.
+  const liens = html.flatMap((f) => [...lire(f).matchAll(/href="((?:https:\/\/wa\.me|tel:)[^"]*)"/g)].map((m) => m[1].replaceAll("&amp;", "&")));
+  const lienValide = (l) => {
+    if (l.startsWith("tel:")) return /^tel:\+\d{6,15}$/.test(l);
+    const m = l.match(/^https:\/\/wa\.me\/(\d{6,15})(\?text=([^&]*))?$/);
+    if (!m) return false;
+    try { if (m[3] !== undefined) decodeURIComponent(m[3]); return true; } catch { return false; }
+  };
+  const liensInvalides = [...new Set(liens.filter((l) => !lienValide(l)))];
   // Mesure de performance : celle du vérificateur si elle existe, sinon la dernière de la QA.
   const perf = projet
     ? json(join(projet, ".qa", "verification", "mesures.json")) ?? json(join(projet, ".qa", "perf", "mesures.json"))
@@ -107,6 +116,8 @@ for (const cas of readdirSync(racine).sort()) {
     seo_min: min("seo"),
     lcp_max_ms: max("lcp_ms"),
     a_completer: aCompleter,
+    liens_contact: liens.length,
+    liens_invalides: liensInvalides,
     decisions_auto: etat?.decisions_auto?.length ?? null,
     cout_usd: run.cout_usd != null ? Number(run.cout_usd.toFixed(2)) : null,
     duree_min: Number(((Number(lire(join(dossierCas, "duree_s"))) || 0) / 60).toFixed(1)),
@@ -127,14 +138,15 @@ const md = [
     `revue finale OK : ${lignes.filter((l) => l.critique === "PASS" && l.verification === "PRET").length}/${lignes.length} · ` +
     `coût total : ${total("cout_usd").toFixed(2)} $ · durée totale : ${total("duree_min").toFixed(0)} min`,
   "",
-  "| Cas | Build | Pages | QA (itér.) | Sécurité | Critique | Vérif. | Perf mobile | Perf min | A11y min | SEO min | LCP max | À compléter | Coût $ | Durée min |",
-  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+  "| Cas | Build | Pages | QA (itér.) | Sécurité | Critique | Vérif. | Perf mobile | Perf min | A11y min | SEO min | LCP max | À compléter | Contacts | Coût $ | Durée min |",
+  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ...lignes.map((l) => [
     l.cas, l.build ? "✅" : "❌", l.pages,
     `${ok(l.qa, ["VALIDE"])} (${l.iterations_qa ?? "?"})`, ok(l.securite, ["AUTORISE"]),
     ok(l.critique, ["PASS"]), ok(l.verification, ["PRET"]), ok(l.perf, ["OK"]),
     l.perf_min ?? "—", l.a11y_min ?? "—", l.seo_min ?? "—", l.lcp_max_ms ?? "—",
-    l.a_completer, l.cout_usd ?? "—", l.duree_min,
+    l.a_completer, l.liens_contact ? (l.liens_invalides.length ? `❌ ${l.liens_invalides.length}/${l.liens_contact}` : `✅ ${l.liens_contact}`) : "—",
+    l.cout_usd ?? "—", l.duree_min,
   ].join(" | ").replace(/^/, "| ").replace(/$/, " |")),
   "",
   "## Consommation par agent (tous cas confondus)",

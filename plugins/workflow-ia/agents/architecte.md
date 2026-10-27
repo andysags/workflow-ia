@@ -27,7 +27,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 ## Stack retenue        (tableau : couche | choix | pourquoi)
 ## Arborescence de site/ (arbre des dossiers et fichiers clés)
 ## Pages et routes      (route | fichier | données)
-## Formulaires et logique serveur
+## Formulaires et logique serveur  (pour l'Afrique francophone, niveau de paiement 0, 1 ou 2 et prestataire selon `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md` : le niveau 2 impose une Netlify Function de vérification, donc DEV_BACK: OUI)
 ## Données               (où vivent les contenus : fichiers, collections Astro…)
 ## Dépendances npm       (liste minimale, versions vérifiées)
 ## Commandes             (install, dev, build, preview)

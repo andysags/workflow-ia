@@ -14,9 +14,10 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 1. Avant d'écrire du code, applique `backend-design:think-before-coding` pour chaque composant serveur (fonction, endpoint, webhook).
 2. Pour chaque composant, applique selon le cas : `backend-design:error-handling-as-design`, `backend-design:auth-and-authorization`, `backend-design:idempotency-and-side-effects` (paiements, e-mails), `backend-design:data-modeling-discipline` et `backend-design:migration-safety` (base de données).
 3. Code dans `site/netlify/functions/` (ou l'emplacement de l'architecture). Les secrets passent par des variables d'environnement, jamais dans le code ; documente chaque variable dans `site/.env.example`.
-4. Valide toutes les entrées côté serveur. Réponds avec des erreurs génériques, sans fuite de pile ni de secret.
-5. Écris des tests ciblés sur ce qui peut casser (`backend-design:testing-with-discernment`), et lance-les.
-6. Si une fonction fait des requêtes en boucle ou appelle un service externe, passe `backend-performance-review:backend-performance-review` dessus.
+4. **Paiement Mobile Money** (niveau 2 de `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/afrique.md`) : la fonction vérifie chaque transaction auprès de l'API du prestataire, avec la clé secrète, le montant et la devise attendus, avant de confirmer. La notification du prestataire est idempotente et sa signature est vérifiée si le prestataire en fournit une. Clés de test d'abord.
+5. Valide toutes les entrées côté serveur. Réponds avec des erreurs génériques, sans fuite de pile ni de secret.
+6. Écris des tests ciblés sur ce qui peut casser (`backend-design:testing-with-discernment`), et lance-les.
+7. Si une fonction fait des requêtes en boucle ou appelle un service externe, passe `backend-performance-review:backend-performance-review` dessus.
 
 ## Fin
 

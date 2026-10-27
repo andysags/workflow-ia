@@ -1,0 +1,22 @@
+---
+const PRIX = 15000;
+---
+<html lang="fr">
+<head><meta charset="utf-8" /><title>Inscription atelier couture</title>
+<script src="https://cdn.kkiapay.me/k.js"></script></head>
+<body>
+  <h1>Inscription : {PRIX} FCFA</h1>
+  <button id="payer">Payer par Mobile Money</button>
+  <script is:inline>
+    const KKIAPAY_PUBLIC = "pk_test_0000000000000000000000000000";
+    const KKIAPAY_SECRET = "sk_test_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d";
+    document.getElementById("payer").addEventListener("click", () => {
+      openKkiapayWidget({ amount: new URLSearchParams(location.search).get("montant") || 15000, key: KKIAPAY_PUBLIC, sandbox: true });
+    });
+    addKkiapayListener("success", (r) => {
+      localStorage.setItem("inscrit", "oui");
+      document.body.innerHTML = "<h1>Merci " + r.name + ", votre place est confirmée !</h1>";
+    });
+  </script>
+</body>
+</html>

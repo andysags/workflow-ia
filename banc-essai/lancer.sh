@@ -7,6 +7,7 @@
 #   banc-essai/lancer.sh restaurant-cotonou    # un ou plusieurs cas précis
 #   PARALLELE=3 banc-essai/lancer.sh           # jusqu'à 3 cas en même temps
 #   MODELE=claude-sonnet-5-5 banc-essai/lancer.sh  # forcer un modèle
+#   PLUGINS=/chemin/copie/plugins banc-essai/lancer.sh  # tester une copie figée des plugins
 #
 # Coût : une exécution complète coûte plusieurs dollars par cas (environ 4 $ mesurés sur le premier test).
 # Les commandes autorisées sont limitées à la liste ALLOWED ci-dessous ; rien d'autre ne s'exécute sans accord.
@@ -17,6 +18,7 @@ RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 BANC="$RACINE/banc-essai"
 SORTIE="${SORTIE:-$BANC/resultats/$(date +%Y-%m-%d_%H-%M)}"
 PARALLELE="${PARALLELE:-1}"
+PLUGINS="${PLUGINS:-$RACINE/plugins}"
 
 if [ $# -gt 0 ]; then cas=("$@"); else cas=($(cd "$BANC/cas" && ls *.md | sed 's/\.md$//')); fi
 
@@ -40,7 +42,7 @@ lancer_cas() {
   (
     cd "$dossier"
     claude -p "/workflow-ia:creer-site $prompt --auto" \
-      --plugin-dir "$RACINE/plugins" \
+      --plugin-dir "$PLUGINS" \
       --permission-mode acceptEdits \
       --allowedTools "${ALLOWED[@]}" \
       ${MODELE:+--model "$MODELE"} \

@@ -35,8 +35,9 @@ Ne cherche pas de nouveaux défauts mineurs à cette étape : seul un nouveau d�
 5. **Performance mobile** : beaucoup de visiteurs naviguent sur un téléphone d'entrée de gamme avec un réseau lent. Mesure toutes les routes du site :
    `node "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/perf-mobile.mjs" http://localhost:4321 <dossier-projet>/.qa/perf <route> <route> ...`
    Seuils (bloquants si non atteints) : performance ≥ 90, accessibilité ≥ 95, bonnes pratiques ≥ 90, SEO ≥ 95, LCP ≤ 2,5 s, CLS ≤ 0,1, TBT ≤ 200 ms. Pour chaque score sous le seuil, ouvre le rapport `lighthouse-<page>.json` et cite les audits en échec (identifiant et titre) comme défauts **majeurs**. Si le script répond `PERF: IMPOSSIBLE` faute de navigateur, installe Chromium avec Playwright dans le dossier de travail (`cd <dossier-projet>/.qa && npm init -y && npm i -D playwright && npx playwright install chromium`), puis relance en passant `CHROME_PATH` (le chemin est donné par `node -e "console.log(require('playwright').chromium.executablePath())"`). Si c'est toujours impossible, note-le dans le rapport, avec la cause.
-6. Vérifie la conformité au brief : chaque fonctionnalité MVP de `01-brief.md` est présente et marche.
-7. Arrête le serveur d'aperçu à la fin.
+6. **Liens de contact** : chaque lien `wa.me` contient un numéro en chiffres seulement et un `text` correctement décodable, et chaque `tel:` commence par `+`. La barre d'action fixe ne masque aucun contenu en 375 px.
+7. Vérifie la conformité au brief : chaque fonctionnalité MVP de `01-brief.md` est présente et marche.
+8. Arrête le serveur d'aperçu à la fin.
 
 ## Livrable : `07-rapport-qa.md`
 
