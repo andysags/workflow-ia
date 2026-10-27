@@ -19,9 +19,10 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 2. Applique le design : importe `design-tokens.css`, configure Tailwind avec ces tokens. Pour chaque composant, consulte `ui-ux-pro-max:ui-ux-pro-max` (`--stack astro` ou la stack retenue) et `ui-ux-pro-max:ui-styling`.
 3. Code chaque page et chaque section du brief. Mobile d'abord, HTML sémantique, un seul `<h1>` par page, `alt` sur toutes les images, labels visibles sur les formulaires, focus visible, `lang` sur `<html>`, métadonnées SEO de `04-contenu.md`.
 4. Formulaires : Netlify Forms (`data-netlify="true"`, champ `form-name`, honeypot `netlify-honeypot`) sauf mention contraire de l'architecture.
-5. Images : place-holders légers (SVG ou dégradés) avec un commentaire `TODO image client`. Ne télécharge pas d'images protégées.
-6. Ajoute `netlify.toml` (commande de build, dossier publié, en-têtes de sécurité : `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`).
-7. Lance `npm run build` jusqu'à ce qu'il passe sans erreur. Corrige la cause, jamais en désactivant un contrôle.
+5. Polices : héberge-les dans le site avec les paquets `@fontsource/<police>` (ou `@fontsource-variable/<police>`), importés dans le layout. Pas de lien vers Google Fonts : c'est plus rapide, compatible avec la CSP et sans transfert de données personnelles. Vérifie dans le build que les fichiers de police sont bien présents dans `dist/`.
+6. Images : place-holders légers (SVG ou dégradés) avec un commentaire `TODO image client`. Ne télécharge pas d'images protégées.
+7. Ajoute `netlify.toml` (commande de build, dossier publié, en-têtes de sécurité : `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`).
+8. Lance `npm run build` jusqu'à ce qu'il passe sans erreur. Corrige la cause, jamais en désactivant un contrôle.
 
 ## Mode correction
 
