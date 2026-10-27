@@ -45,7 +45,8 @@ for t in "${tests[@]}"; do
   done < <(liste mots "$A")
   while IFS= read -r m; do
     [ -z "$m" ] && continue
-    trouve="$(grep -oiE "$m" "$rapport" 2>/dev/null | head -1)"
+    # On ignore les exemples de format (`3 500 FCFA`) et les emplacements [À COMPLÉTER : …] : ce ne sont pas des faits.
+    trouve="$(sed -E 's/`[^`]*`//g; s/\[À COMPLÉTER[^]]*\]//g' "$rapport" 2>/dev/null | grep -oiE "$m" | head -1)"
     if [ -z "$trouve" ]; then notes+=("✅ pas de : $m"); else notes+=("❌ interdit trouvé : « $trouve »"); ok=0; fi
   done < <(liste interdits "$A")
   while IFS= read -r m; do
