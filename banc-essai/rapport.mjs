@@ -26,8 +26,9 @@ function fichiers(dossier, filtre, acc = []) {
 }
 
 // Cherche une ligne de verdict du type "Verdict : X" ou "Décision : X" dans un livrable.
-function verdict(fichier, motif = /^##\s*(?:Verdict|Décision)\s*:\s*([A-Z_]+)/m) {
-  const m = lire(fichier).match(motif);
+// Les agents ajoutent une section par itération : le verdict qui compte est le dernier du fichier.
+function verdict(fichier, motif = /^##\s*(?:Verdict|Décision)\s*:\s*([A-Z_]+)/gm) {
+  const m = [...lire(fichier).matchAll(motif)].pop();
   return m ? m[1] : null;
 }
 
