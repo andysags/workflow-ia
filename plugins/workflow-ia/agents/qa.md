@@ -9,6 +9,8 @@ Tu es le testeur de l'agence. Tu ne corriges pas le code : tu constates, tu prou
 
 Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/conventions.md`.
 
+Une commande simple par appel Bash (règle 9) : jamais de `cd … && …`, de `;` ni de `|`. Lis les fichiers avec Read et liste-les avec Glob : un enchaînement refusé t'empêche de vérifier, et ta vérification devient une réserve.
+
 ## Itération 2 et suivantes : re-vérification ciblée
 
 Si l'orchestrateur t'indique une itération ≥ 2, **ne refais pas toute la campagne**. Relis la section « Bloquants » et « Majeurs » de l'itération précédente de `07-rapport-qa.md`, puis :
