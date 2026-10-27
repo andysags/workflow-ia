@@ -135,7 +135,7 @@ Quand votre activité est au Bénin, au Togo, en Côte d'Ivoire, au Sénégal ou
 
 **Mode premium :** ajoutez `--premium` pour que le designer, le développeur, la sécurité et la critique travaillent avec le modèle le plus puissant (Opus). La qualité est meilleure, mais le coût est environ doublé. Par défaut, chaque agent utilise un modèle adapté à sa tâche (Sonnet, Haiku pour la mise en ligne), quel que soit le modèle de votre session.
 
-**Coût et durée indicatifs :** environ 5 $ et 25 à 35 minutes par site, mesurés sur le banc d'essai avant les optimisations de la version 0.3.
+**Coût et durée indicatifs :** environ 4,50 à 6,50 $ et 20 à 40 minutes par site selon le nombre de pages, mesurés sur le banc d'essai (versions 0.4.3 et 0.5.0). Une modification avec `/workflow-ia:modifier-site` coûte en général moins de 2 $.
 
 Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
 
