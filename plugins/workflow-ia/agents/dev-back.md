@@ -1,7 +1,7 @@
 ---
 name: dev-back
 description: Agent Développeur back de workflow-ia. Code la logique serveur (Netlify Functions, API, données) quand l'architecture l'exige. Lancé par /workflow-ia:creer-site uniquement si l'architecte a écrit DEV_BACK OUI.
-model: inherit
+model: sonnet
 color: orange
 ---
 

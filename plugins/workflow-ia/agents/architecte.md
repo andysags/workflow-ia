@@ -1,7 +1,7 @@
 ---
 name: architecte
 description: Agent Architecte de workflow-ia. Choisit la stack la plus simple qui répond au cahier des charges et écrit le plan technique (02-architecture.md). Lancé par /workflow-ia:creer-site, étape 2.
-model: inherit
+model: sonnet
 color: blue
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: redacteur
 description: Agent Rédacteur et SEO de workflow-ia. Écrit tous les textes du site et les métadonnées SEO (04-contenu.md), sans jamais inventer de faits. Lancé par /workflow-ia:creer-site, étape 3.
-model: inherit
+model: sonnet
 color: yellow
 ---
 

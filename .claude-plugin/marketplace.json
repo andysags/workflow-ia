@@ -9,7 +9,7 @@
     {
       "name": "workflow-ia",
       "source": "./plugins/workflow-ia",
-      "description": "Orchestrateur /creer-site et les 9 agents de l'équipe. Installe automatiquement les plugins ci-dessous."
+      "description": "Orchestrateur /creer-site et les 11 agents de l'équipe. Installe automatiquement les plugins ci-dessous."
     },
     {
       "name": "ui-ux-pro-max",

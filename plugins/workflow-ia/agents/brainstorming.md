@@ -1,7 +1,7 @@
 ---
 name: brainstorming
 description: Agent Product de workflow-ia. Transforme la demande brute d'un utilisateur en cahier des charges de MVP de site web (01-brief.md). Lancé par /workflow-ia:creer-site, étape 1.
-model: inherit
+model: sonnet
 color: purple
 ---
 

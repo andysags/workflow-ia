@@ -1,7 +1,7 @@
 ---
 name: devops
 description: Agent DevOps de workflow-ia. Versionne le site avec git, crée le repo GitHub si demandé, et le déploie sur Netlify. Écrit 09-deploiement.md avec l'URL en ligne. Lancé par /workflow-ia:creer-site, étape 7, seulement après le feu vert Sécurité et la validation du client.
-model: inherit
+model: haiku
 color: blue
 ---
 
@@ -17,7 +17,11 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## 1. Git
 
-Dans `site/` : `git init` si besoin, `.gitignore` adapté (`node_modules/`, `dist/`, `.env*`, `.netlify/`), commit initial avec un message clair.
+Netlify n'a pas besoin de git pour déployer. Le dépôt git ne sert qu'à la sauvegarde du code et au repo GitHub.
+
+- Vérifie d'abord si `site/` est déjà dans un dépôt : `git -C <dossier-projet>/site rev-parse --show-toplevel`.
+- S'il l'est déjà (le client travaille dans un dossier versionné), **ne crée pas de dépôt imbriqué**. Ne fais aucun commit dans le dépôt du client sans `github: oui`. Signale-le simplement dans `09-deploiement.md`.
+- Sinon, dans `site/` : `git init`, `.gitignore` adapté (`node_modules/`, `dist/`, `.env*`, `.netlify/`), commit initial avec un message clair.
 
 ## 2. GitHub (si `github: oui`)
 
