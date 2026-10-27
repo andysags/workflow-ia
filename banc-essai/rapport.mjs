@@ -87,7 +87,7 @@ for (const cas of readdirSync(racine).sort()) {
     pages: html.length,
     qa: projet ? verdict(join(projet, "07-rapport-qa.md")) : null,
     securite: projet ? verdict(join(projet, "08-rapport-securite.md")) : null,
-    critique: projet ? verdict(join(projet, "10-revue-critique.md")) : null,
+    critique: projet ? verdict(join(projet, "10-revue-critique.md")) ?? verdict(join(projet, ".qa", "critique", "10-revue-critique.md")) : null,
     verification: projet ? verdict(join(projet, "11-verification.md")) : null,
     iterations_qa: etat?.iterations_qa ?? null,
     iterations_securite: etat?.iterations_securite ?? null,

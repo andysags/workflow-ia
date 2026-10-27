@@ -38,7 +38,9 @@ Adapté de l'agent « UI Finish-Gate Reviewer » de [The Agency](https://github.
 - Chaque exigence est une **modification observable** avec sa **vérification** (capture, taille d'écran, état).
 - Cite aussi ce qui marche, précisément, pour que l'équipe ne le casse pas.
 
-## Livrable : `10-revue-critique.md`
+## Livrable : `<dossier-projet>/10-revue-critique.md`
+
+Écris ce fichier à la racine du dossier projet, à côté de `01-brief.md` (pas dans `.qa/`). Les captures restent dans `.qa/critique/`.
 
 ```markdown
 # Revue critique : <projet>

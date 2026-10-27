@@ -90,6 +90,8 @@ for (const route of routes) {
     cls: Number((audit("cumulative-layout-shift") ?? 0).toFixed(3)),
     tbt_ms: Math.round(audit("total-blocking-time")),
     poids_ko: Math.round((audit("total-byte-weight") ?? 0) / 1024),
+    // Une page volontairement exclue des moteurs (404, confirmation) a un SEO bas par conception.
+    noindex: lhr.audits["is-crawlable"]?.score === 0,
   });
 }
 
@@ -97,6 +99,7 @@ const echecs = [];
 for (const p of pages) {
   if (p.erreur) { echecs.push(`${p.route}: mesure impossible`); continue; }
   for (const c of ["performance", "accessibility", "best-practices", "seo"]) {
+    if (c === "seo" && p.noindex) continue;
     if (p[c] < SEUILS[c]) echecs.push(`${p.route}: ${c} ${p[c]} < ${SEUILS[c]}`);
   }
   if (p.lcp_ms > SEUILS.lcp_ms) echecs.push(`${p.route}: LCP ${p.lcp_ms} ms > ${SEUILS.lcp_ms}`);
@@ -118,7 +121,7 @@ console.log("route | perf | a11y | bonnes pratiques | seo | LCP ms | CLS | TBT m
 for (const p of pages) {
   console.log(p.erreur
     ? `${p.route} | ERREUR : ${p.erreur.split("\n").pop()}`
-    : `${p.route} | ${p.performance} | ${p.accessibility} | ${p["best-practices"]} | ${p.seo} | ${p.lcp_ms} | ${p.cls} | ${p.tbt_ms} | ${p.poids_ko}`);
+    : `${p.route} | ${p.performance} | ${p.accessibility} | ${p["best-practices"]} | ${p.seo}${p.noindex ? " (noindex)" : ""} | ${p.lcp_ms} | ${p.cls} | ${p.tbt_ms} | ${p.poids_ko}`);
 }
 if (pages.every((p) => p.erreur)) {
   console.log("PERF: IMPOSSIBLE aucune page mesurée (Chrome introuvable ? définir CHROME_PATH)");
