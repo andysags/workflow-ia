@@ -1,7 +1,7 @@
 ---
 name: devops
 description: Agent DevOps de workflow-ia. Versionne le site avec git, crée le repo GitHub si demandé, et le déploie sur Netlify. Écrit 09-deploiement.md avec l'URL en ligne. Lancé par /workflow-ia:creer-site, étape 7, seulement après le feu vert Sécurité et la validation du client.
-model: inherit
+model: haiku
 color: blue
 ---
 

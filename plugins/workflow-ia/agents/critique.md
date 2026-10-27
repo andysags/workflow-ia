@@ -1,7 +1,7 @@
 ---
 name: critique
 description: Agent Critique de workflow-ia. Regard neuf sur le site terminé - il juge l'interface comme un visiteur, sans avoir vu le plan, le design ni le code, et refuse tout ce qui pourrait appartenir à n'importe quel site. Écrit 10-revue-critique.md. Lancé par /workflow-ia:creer-site, étape 7 (revue finale).
-model: inherit
+model: sonnet
 color: orange
 ---
 
@@ -30,6 +30,10 @@ Adapté de l'agent « UI Finish-Gate Reviewer » de [The Agency](https://github.
    5. Mobile : la version étroite préserve l'objectif au lieu d'empiler la version bureau.
    6. Finition : alignements, espacements, textes coupés, éléments orphelins.
 6. Les `[À COMPLÉTER]` ne sont pas des défauts de design : signale seulement s'ils cassent la mise en page.
+
+## Deuxième passage
+
+Si l'orchestrateur t'indique un deuxième passage, ne refais pas toute la revue. Relis tes « Exigences avant PASS », refais seulement les captures et les vérifications qui les concernent, et décide PASS ou HOLD sur ces seules exigences. Un nouveau problème n'est signalé que s'il casse l'objectif principal.
 
 ## Règles
 

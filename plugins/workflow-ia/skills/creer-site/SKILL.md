@@ -1,7 +1,7 @@
 ---
 name: creer-site
 description: Crée un site web complet à partir d'un seul prompt, du cahier des charges jusqu'au déploiement sur Netlify, en pilotant une équipe de 11 agents spécialisés (brainstorming, architecte, designer, rédacteur, dev front, dev back, QA, sécurité, critique, vérificateur, DevOps). Utiliser quand l'utilisateur veut créer, générer ou lancer un site web, une landing page, un site vitrine ou un portfolio, ou reprendre un projet de site existant dans sites/.
-argument-hint: "<description du site>" [--auto] | reprendre <slug>
+argument-hint: "<description du site>" [--auto] [--premium] | reprendre <slug>
 ---
 
 # Créer un site web en un prompt
@@ -21,6 +21,13 @@ Conventions partagées par tous les agents : `${CLAUDE_PLUGIN_ROOT}/skills/creer
 - **Validations du client** : utilise l'outil AskUserQuestion avec des options claires, ta recommandation en premier. N'avance jamais au-delà d'un point de validation sans réponse (sauf en mode automatique).
 - **Boucles de correction limitées** : 3 itérations pour la QA, 3 pour la Sécurité, 1 pour la revue finale. Au-delà, arrête et présente au client ce qui reste, avec ta recommandation.
 - Tiens le client informé en une ligne à chaque étape (« Étape 3/8 : le designer prépare la charte graphique »).
+
+## Budget et sobriété
+
+- Chaque agent a un modèle par défaut adapté à sa tâche (Sonnet pour la plupart, Haiku pour le DevOps). Si `$ARGUMENTS` contient `--premium` (retire-le de la description), passe `model: "opus"` à l'outil Agent pour `designer`, `dev-front`, `securite` et `critique` : meilleure qualité, coût environ doublé. Note le mode dans `etat.json`.
+- Toi aussi, tu es facturé à chaque tour. Ne lis pas les livrables en entier : pour résumer au client, lis seulement les sections utiles (verdict, liste des corrections) avec `Grep` ou `Read` limité. Ne relis pas un fichier déjà lu.
+- Transmets aux agents des consignes courtes : le chemin du dossier projet, l'itération, la liste des corrections. Ils lisent eux-mêmes les livrables.
+- Pendant qu'un agent travaille, attends sa fin sans relancer de commandes de vérification.
 
 ## Mode automatique
 
@@ -60,21 +67,18 @@ Lance `workflow-ia:architecte`. Note `dev_back` dans `etat.json` d'après sa lig
 1. Lance `workflow-ia:dev-front`. Attends `BUILD: OK`.
 2. Si `dev_back` est vrai, lance ensuite `workflow-ia:dev-back`. Attends `BACK: OK`.
 
-## Étape 5/8 : tests et performance mobile (agent `qa`, boucle de correction)
+## Étapes 5 et 6/8 : tests et sécurité (agents `qa` et `securite`, en parallèle)
 
-1. Lance `workflow-ia:qa` avec le numéro d'itération.
-2. Si `QA: A_CORRIGER` : transmets la liste des corrections à `workflow-ia:dev-front` (ou `dev-back` si elles concernent les fonctions serveur), puis relance `qa`. Incrémente `iterations_qa`. Maximum 3 itérations.
+QA et Sécurité lisent le même build sans le modifier : lance-les **dans le même message**, avec le numéro d'itération.
 
-## Étape 6/8 : sécurité (agent `securite`, boucle de correction)
-
-1. Lance `workflow-ia:securite` avec le numéro d'itération.
-2. Si `SECURITE: BLOQUE` : transmets les corrections au développeur concerné, relance `qa` une fois pour vérifier qu'il n'y a pas de régression, puis relance `securite`. Incrémente `iterations_securite`. Maximum 3 itérations. **Aucun déploiement tant que le verdict n'est pas AUTORISE.**
-3. Si le rapport recommande un scan approfondi, propose-le au client en précisant qu'il consomme beaucoup de tokens. S'il accepte, lance la commande `/claude-security` sur `sites/<slug>/site`, puis transmets les failles confirmées au développeur.
+1. Si `QA: A_CORRIGER` ou `SECURITE: BLOQUE` : fusionne leurs listes en **une seule** liste de corrections (sécurité d'abord), transmets-la au développeur concerné (`dev-front`, ou `dev-back` pour les fonctions serveur), puis relance seulement le ou les agents qui avaient des remarques, en indiquant l'itération : en itération ≥ 2, la QA fait une **re-vérification ciblée** (voir son agent). Incrémente `iterations_qa` et `iterations_securite`. Maximum 3 itérations chacun.
+2. **Aucun déploiement tant que le verdict Sécurité n'est pas AUTORISE.**
+3. Si le rapport Sécurité recommande un scan approfondi, propose-le au client en précisant qu'il consomme beaucoup de tokens. S'il accepte, lance la commande `/claude-security` sur `sites/<slug>/site`, puis transmets les failles confirmées au développeur.
 
 ## Étape 7/8 : revue finale (agents `critique` et `verificateur`, en parallèle)
 
 1. Lance `workflow-ia:critique` et `workflow-ia:verificateur` **dans le même message**. Ne transmets au critique que le chemin du dossier projet, sans résumé du travail : son regard doit rester neuf.
-2. Si `CRITIQUE: HOLD` ou `VERIFICATION: A_CORRIGER` : regroupe leurs exigences en une seule liste, transmets-la au développeur concerné, puis relance `qa` une fois pour éviter les régressions. Relance ensuite les deux agents de revue une seule fois (`iterations_revue` = 1).
+2. Si `CRITIQUE: HOLD` ou `VERIFICATION: A_CORRIGER` : regroupe leurs exigences en une seule liste, transmets-la au développeur concerné, puis relance en parallèle, une seule fois et en **deuxième passage** (ciblé), seulement les agents de revue qui avaient des remarques (`iterations_revue` = 1). Le vérificateur contrôle lui-même l'absence de régression : pas de QA supplémentaire.
 3. Si un point reste ouvert après ce tour, ne boucle pas : présente-le au client à la validation 3, avec ta recommandation.
 
 ## Étape 8/8 : mise en ligne (agent `devops`)

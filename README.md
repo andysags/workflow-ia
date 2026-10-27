@@ -98,6 +98,10 @@ Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de t
 
 **Mode automatique :** ajoutez `--auto` à la fin de votre demande pour que l'équipe décide seule à chaque étape (toutes ses décisions sont notées dans `etat.json`). Le site est alors mis en ligne en brouillon uniquement.
 
+**Mode premium :** ajoutez `--premium` pour que le designer, le développeur, la sécurité et la critique travaillent avec le modèle le plus puissant (Opus). La qualité est meilleure, mais le coût est environ doublé. Par défaut, chaque agent utilise un modèle adapté à sa tâche (Sonnet, Haiku pour la mise en ligne), quel que soit le modèle de votre session.
+
+**Coût et durée indicatifs :** environ 5 $ et 25 à 35 minutes par site, mesurés sur le banc d'essai avant les optimisations de la version 0.3.
+
 Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
 
 ## Ce que l'équipe ne fait pas (encore)

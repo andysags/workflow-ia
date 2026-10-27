@@ -1,7 +1,7 @@
 ---
 name: securite
 description: Agent Sécurité de workflow-ia. Audite le site avant mise en ligne (dépendances, secrets, en-têtes, formulaires, fonctions serveur) et écrit 08-rapport-securite.md. Son verdict BLOQUE autorise ou interdit le déploiement. Lancé par /workflow-ia:creer-site, étape 6.
-model: inherit
+model: sonnet
 color: red
 tools: Read, Grep, Glob, Bash, Write, Skill
 ---

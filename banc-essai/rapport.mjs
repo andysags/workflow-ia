@@ -32,7 +32,8 @@ function verdict(fichier, motif = /^##\s*(?:Verdict|Décision)\s*:\s*([A-Z_]+)/m
 }
 
 function analyserRun(fichier) {
-  const res = { cout_usd: null, tours: null, sous_agents: {}, erreurs: 0, fin: null };
+  const res = { cout_usd: null, tours: null, sous_agents: {}, erreurs: 0, fin: null, poids: {}, appels: {} };
+  const agentDe = {}; // identifiant de l'appel Agent -> type d'agent
   for (const ligne of lire(fichier).split("\n")) {
     if (!ligne) continue;
     let e;
@@ -42,13 +43,22 @@ function analyserRun(fichier) {
       res.tours = e.num_turns ?? res.tours;
       res.fin = e.subtype;
     }
-    if (e.type === "assistant" && !e.parent_tool_use_id) {
+    if (e.type === "assistant") {
       for (const c of e.message?.content ?? []) {
         if (c.type === "tool_use" && c.name === "Agent") {
           const a = (c.input?.subagent_type ?? "?").replace(/^workflow-ia:/, "");
-          res.sous_agents[a] = (res.sous_agents[a] ?? 0) + 1;
+          agentDe[c.id] = a;
+          if (!e.parent_tool_use_id) res.sous_agents[a] = (res.sous_agents[a] ?? 0) + 1;
         }
       }
+      // Poids relatif d'un appel modèle, en équivalent tokens d'entrée (tarifs relatifs Anthropic :
+      // lecture de cache x0,1, écriture de cache x1,25, sortie x5).
+      const u = e.message?.usage ?? {};
+      const poids = (u.input_tokens ?? 0) + 0.1 * (u.cache_read_input_tokens ?? 0)
+        + 1.25 * (u.cache_creation_input_tokens ?? 0) + 5 * (u.output_tokens ?? 0);
+      const qui = e.parent_tool_use_id ? agentDe[e.parent_tool_use_id] ?? "?" : "orchestrateur";
+      res.poids[qui] = (res.poids[qui] ?? 0) + poids;
+      res.appels[qui] = (res.appels[qui] ?? 0) + 1;
     }
     if (e.type === "user") {
       for (const c of Array.isArray(e.message?.content) ? e.message.content : []) {
@@ -102,6 +112,8 @@ for (const cas of readdirSync(racine).sort()) {
     duree_min: Number(((Number(lire(join(dossierCas, "duree_s"))) || 0) / 60).toFixed(1)),
     sous_agents: run.sous_agents,
     erreurs_outils: run.erreurs,
+    poids_agents: run.poids,
+    appels_agents: run.appels,
     fin: run.fin,
   });
 }
@@ -124,6 +136,20 @@ const md = [
     l.perf_min ?? "—", l.a11y_min ?? "—", l.seo_min ?? "—", l.lcp_max_ms ?? "—",
     l.a_completer, l.cout_usd ?? "—", l.duree_min,
   ].join(" | ").replace(/^/, "| ").replace(/$/, " |")),
+  "",
+  "## Consommation par agent (tous cas confondus)",
+  "",
+  "| Agent | Appels modèle | Part de la consommation |",
+  "|---|---|---|",
+  ...(() => {
+    const poids = {}, appels = {};
+    for (const l of lignes) for (const [a, p] of Object.entries(l.poids_agents ?? {})) {
+      poids[a] = (poids[a] ?? 0) + p; appels[a] = (appels[a] ?? 0) + (l.appels_agents?.[a] ?? 0);
+    }
+    const tot = Object.values(poids).reduce((s, p) => s + p, 0) || 1;
+    return Object.entries(poids).sort((x, y) => y[1] - x[1])
+      .map(([a, p]) => `| ${a} | ${appels[a]} | ${(100 * p / tot).toFixed(1)} % |`);
+  })(),
   "",
   "## Détail",
   "",

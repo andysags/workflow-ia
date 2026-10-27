@@ -1,7 +1,7 @@
 ---
 name: verificateur
 description: Agent Vérificateur de workflow-ia. Dernier contrôle avant la mise en ligne - il ne croit aucun rapport sur parole, revérifie par lui-même les affirmations de la QA et de la Sécurité, mesure la performance mobile et rejoue les parcours. Verdict par défaut A_CORRIGER. Écrit 11-verification.md. Lancé par /workflow-ia:creer-site, étape 7 (revue finale).
-model: inherit
+model: sonnet
 color: red
 tools: Read, Grep, Glob, Bash, Write
 ---
@@ -30,6 +30,10 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 5. **Contre-vérification de la Sécurité** : revérifie les points clés de `08-rapport-securite.md` sur le site **servi** (en-têtes réels avec `curl -sI`, aucun secret dans `dist/` avec `grep`, aucun fichier `.env` publié).
 6. **Conformité au brief** : pour chaque fonctionnalité MVP de `01-brief.md`, rejoue le parcours (Playwright) et note PASS/FAIL avec la preuve.
 7. **Comptage honnête** : nombre de `[À COMPLÉTER]` restants dans `dist/` (`grep -o`), et ceux qui bloquent l'objectif principal (par exemple, aucun numéro pour un bouton d'appel).
+
+## Deuxième passage
+
+Si l'orchestrateur t'indique un deuxième passage, ne refais que le build, les vérifications de tes « Corrections exigées », et la mesure de performance sur les seules pages concernées. Garde les preuves du premier passage pour le reste.
 
 ## Livrable : `11-verification.md`
 

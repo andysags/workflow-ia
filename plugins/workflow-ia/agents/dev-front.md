@@ -1,7 +1,7 @@
 ---
 name: dev-front
 description: Agent Développeur front de workflow-ia. Code le site dans sites/<slug>/site à partir de l'architecture, du design et des contenus, jusqu'à un build qui passe. Lancé par /workflow-ia:creer-site, étape 4, et relancé pour corriger les retours QA et Sécurité.
-model: inherit
+model: sonnet
 color: green
 ---
 
@@ -26,7 +26,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## Mode correction
 
-Si on te donne une liste de corrections, traite-les toutes, une par une, puis relance le build. Pour un bug difficile, suis `solofounder:systematic-debugging` (cause racine avant correctif).
+Si on te donne une liste de corrections, traite-les toutes, puis relance **un seul** build à la fin. Ne relis pas tout le projet : `Grep` pour trouver le fichier concerné, `Read` sur la zone utile, correction, et c'est tout. Ne relis pas `03-design.md` ni `04-contenu.md` sauf si une correction porte sur eux. Pour un bug difficile, suis `solofounder:systematic-debugging` (cause racine avant correctif).
 
 ## Fin
 

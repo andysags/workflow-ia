@@ -1,7 +1,7 @@
 ---
 name: designer
 description: Agent Designer UI/UX de workflow-ia. Produit le design system du site (03-design.md et design-tokens.css) avec UI/UX Pro Max. Lancé par /workflow-ia:creer-site, étape 3.
-model: inherit
+model: sonnet
 color: pink
 ---
 
