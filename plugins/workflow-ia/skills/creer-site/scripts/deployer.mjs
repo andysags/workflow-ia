@@ -76,10 +76,12 @@ if (!siteId) {
   console.log(`3/5 Site existant ${siteId}.`);
 }
 
-// 4. Envoi de site/dist uniquement
+// 4. Envoi de site/dist uniquement. La CLI est lancée depuis site/ pour lire son netlify.toml
+// (en-têtes de sécurité, redirections) : lancée ailleurs, elle les ignore sans prévenir.
 console.log(`4/5 Envoi (${prod ? "production" : "brouillon"})…`);
 const d = lancer("npx", netlify("deploy", "--dir", dist, "--site", siteId, "--json",
-  "--message", `workflow-ia ${new Date().toISOString().slice(0, 16)}`, ...(prod ? ["--prod"] : [])), { json: true });
+  "--message", `workflow-ia ${new Date().toISOString().slice(0, 16)}`, ...(prod ? ["--prod"] : [])),
+  { json: true, cwd: existsSync(join(site, "netlify.toml")) ? site : projet });
 if (!d.ok) attente(`envoi refusé : ${(d.sortie ?? "").trim().split("\n").slice(-3).join(" | ")}`);
 const url = prod ? (d.data.url ?? d.data.deploy_url) : d.data.deploy_url;
 
