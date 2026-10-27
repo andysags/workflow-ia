@@ -20,6 +20,7 @@ Conventions partagées par tous les agents : `${CLAUDE_PLUGIN_ROOT}/skills/creer
   `{ "slug": "...", "mode": "interactif|auto", "etape": "<nom>", "statut": "en_cours|termine|en_attente_client|bloque", "iterations_qa": 0, "iterations_securite": 0, "iterations_revue": 0, "dev_back": false, "url": null, "decisions_auto": [], "historique": [ { "etape": "...", "date": "...", "resultat": "..." } ] }`
 - **Validations du client** : utilise l'outil AskUserQuestion avec des options claires, ta recommandation en premier. N'avance jamais au-delà d'un point de validation sans réponse (sauf en mode automatique).
 - **Boucles de correction limitées** : 3 itérations pour la QA, 3 pour la Sécurité, 1 pour la revue finale. Au-delà, arrête et présente au client ce qui reste, avec ta recommandation.
+- Toi aussi, respecte la règle 9 des conventions : une commande simple par appel, jamais d'enchaînement (`cd … && …`, `;`). Pour lire un fichier, utilise Read ; pour lister, Glob ; pour chercher, Grep. Un enchaînement refusé fait perdre une vérification entière.
 - Tiens le client informé en une ligne à chaque étape (« Étape 3/8 : le designer prépare la charte graphique »).
 
 ## Budget et sobriété
@@ -36,7 +37,7 @@ Le mode automatique s'active si `$ARGUMENTS` contient `--auto` (retire-le de la 
 
 - à chaque question ou validation, choisis toi-même l'option que tu aurais recommandée, et ajoute-la à `decisions_auto` dans `etat.json` (étape, question, choix, raison) ;
 - ne lance jamais le scan approfondi `/claude-security` ;
-- mets en ligne seulement si `NETLIFY_AUTH_TOKEN` est défini, et toujours en **brouillon** (jamais `--prod`), sans repo GitHub ;
+- mets en ligne toujours en **brouillon** (jamais `--prod`), sans repo GitHub. Ne vérifie pas toi-même le jeton Netlify (une commande qui lit une variable est refusée) : lance le DevOps, son script répond `EN_ATTENTE` si le jeton manque ;
 - **ne t'arrête jamais pour demander quelque chose** : personne ne répondra. Si une commande est refusée, demande à l'agent concerné une autre méthode autorisée (un outil Read/Write au lieu de `cp`, une commande simple au lieu d'un enchaînement). Si une vérification reste impossible, l'agent l'écrit comme **réserve** dans son rapport, et tu passes à l'étape suivante. Une réserve n'est jamais un blocage en mode automatique ; seuls un build en échec ou un verdict Sécurité BLOQUE arrêtent le pipeline ;
 - termine par le bilan, en listant toutes les décisions prises à la place du client et toutes les réserves.
 
