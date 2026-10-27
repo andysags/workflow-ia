@@ -1,0 +1,16 @@
+{
+  "name": "solofounder",
+  "description": "AI virtual team for solopreneurs — dynamically generates flows, specialist roles, and stages for any business request",
+  "version": "0.5.0",
+  "license": "MIT",
+  "keywords": [
+    "solofounder",
+    "virtual-team",
+    "flow-composer",
+    "specialist-roles",
+    "tdd",
+    "debugging",
+    "verification"
+  ],
+  "skills": "./skills/"
+}

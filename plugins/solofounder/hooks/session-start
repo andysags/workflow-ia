@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# SessionStart hook for SoloFounder
+
+set -euo pipefail
+
+# Determine plugin root directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Read using-solofounder content
+bootstrap_content=$(cat "${PLUGIN_ROOT}/skills/using-solofounder/SKILL.md" 2>&1 || echo "Error reading using-solofounder skill")
+
+# Read cross-project learning if available
+learning_content=""
+learning_file="${HOME}/.solofounder/learning/insights.md"
+if [ -f "$learning_file" ]; then
+    learning_content="\n\n## Cross-Project Learning (from previous projects)\n\n$(cat "$learning_file" 2>/dev/null || echo "")"
+fi
+
+# Escape string for JSON embedding using bash parameter substitution.
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+bootstrap_escaped=$(escape_for_json "$bootstrap_content")
+learning_escaped=$(escape_for_json "$learning_content")
+session_context="<EXTREMELY_IMPORTANT>\nYou are running SoloFounder — an AI virtual team system.\n\n**Below is your bootstrap skill. For all other skills, use the 'Skill' tool:**\n\n${bootstrap_escaped}\n${learning_escaped}\n</EXTREMELY_IMPORTANT>"
+
+# Output context injection as JSON.
+# Platform-specific formats.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -z "${COPILOT_CLI:-}" ]; then
+  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
+else
+  printf '{\n  "additionalContext": "%s"\n}\n' "$session_context"
+fi
+
+exit 0

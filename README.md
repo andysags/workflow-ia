@@ -1,133 +1,128 @@
-# Apprendre les workflows IA : un générateur de fiches produits
+# workflow-ia : un site web en un prompt
 
-Le projet : une boutique d'articles vintage a des notes brutes de vendeur
-(« veste jean levis annees 80, petit accroc poche gauche… ») et veut des
-fiches produits propres, honnêtes et prêtes à publier.
+Décrivez le site que vous voulez en une phrase. Une équipe de 9 agents IA s'occupe du reste, du cahier des charges jusqu'à la mise en ligne sur Netlify, en vous demandant votre avis aux moments importants.
 
-> Tu débutes en Python ? Lis [GUIDE_DEBUTANT.md](GUIDE_DEBUTANT.md) : chaque fichier y est expliqué en détail.
-
-On construit la solution **étape par étape**. Chaque étape ajoute un nouveau
-schéma de workflow, avec un script court qu'on peut lancer et modifier.
+```
+/workflow-ia:creer-site Un site vitrine pour mon restaurant à Cotonou, avec le menu et la réservation de table
+```
 
 ## Installation
 
+### 1. Prérequis
+
+- [Claude Code](https://code.claude.com) (abonnement Claude)
+- [Node.js](https://nodejs.org) 20 ou plus, `git`, et [Python 3](https://www.python.org)
+- Pour la mise en ligne : un compte [Netlify](https://www.netlify.com) gratuit et un jeton d'accès (voir plus bas)
+- Optionnel : la [CLI GitHub](https://cli.github.com) connectée (`gh auth login`), pour que le code de chaque site soit poussé sur votre GitHub
+
+### 2. Installer le plugin
+
+Dans Claude Code, tapez ces deux commandes :
+
+```
+/plugin marketplace add andysags/workflow-ia
+/plugin install workflow-ia@workflow-ia
+```
+
+Le plugin `workflow-ia` installe automatiquement ses 9 dépendances (design, rédaction, SEO, backend…).
+
+### 3. Ajouter les plugins recommandés
+
+Ils ne sont pas obligatoires : sans eux, les agents utilisent une solution de repli. Ils rendent l'équipe plus efficace.
+
+```
+/plugin install playwright@claude-plugins-official
+/plugin install claude-security@claude-plugins-official
+/plugin marketplace add netlify/context-and-tools
+/plugin install netlify-skills@netlify-context-and-tools
+/plugin marketplace add anthropics/knowledge-work-plugins
+/plugin install product-management@knowledge-work-plugins
+```
+
+Si Claude Code ne trouve pas `claude-plugins-official`, ajoutez-la d'abord : `/plugin marketplace add anthropics/claude-plugins-official`.
+
+Tapez ensuite `/reload-plugins`, ou redémarrez Claude Code.
+
+### Variante : cloner le repo
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows : .venv\Scripts\activate
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY="sk-ant-..."   # clé créée sur https://platform.claude.com
+git clone https://github.com/andysags/workflow-ia.git
+cd workflow-ia
+claude
 ```
 
-Chaque étape se lance depuis la racine du projet :
+Dans Claude Code, enregistrez le dossier cloné comme marketplace, puis installez le plugin :
 
-```bash
-python -m etapes.e01_appel_simple
+```
+/plugin marketplace add ./
+/plugin install workflow-ia@workflow-ia
 ```
 
-## Workflow ou agent ?
+Avec cette variante, vos modifications des agents sont prises en compte après un `/reload-plugins`, ce qui est pratique pour adapter l'équipe à vos besoins.
 
-| | **Workflow** (étapes 1 à 6) | **Agent** (étape 7) |
+### 4. Jeton Netlify (pour la mise en ligne)
+
+1. Sur Netlify : **User settings → Applications → Personal access tokens → New access token**.
+2. Avant de lancer Claude Code, définissez-le dans votre terminal :
+   - macOS / Linux : `export NETLIFY_AUTH_TOKEN="votre-jeton"`
+   - Windows (PowerShell) : `$env:NETLIFY_AUTH_TOKEN="votre-jeton"`
+
+Ne collez jamais ce jeton dans la conversation. Sans jeton, le site est construit et testé en local, et vous pourrez le mettre en ligne plus tard.
+
+## Utilisation
+
+Placez-vous dans le dossier où vous voulez créer vos sites, lancez `claude`, puis :
+
+```
+/workflow-ia:creer-site <description de votre site>
+```
+
+Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de travail. Pour reprendre un projet interrompu :
+
+```
+/workflow-ia:creer-site reprendre <nom-du-site>
+```
+
+## Ce qui se passe
+
+| Étape | Agent | Ce qu'il produit | Votre rôle |
+|---|---|---|---|
+| 1 | Brainstorming | Cahier des charges du MVP (`01-brief.md`) | Répondre à quelques questions, puis **valider** |
+| 2 | Architecte | Choix techniques (`02-architecture.md`) | — |
+| 3 | Designer + Rédacteur | Charte graphique (`03-design.md`), textes et SEO (`04-contenu.md`) | **Valider**, donner les infos manquantes (adresse, prix…) |
+| 4 | Dev front (+ Dev back si besoin) | Le site (`site/`) | — |
+| 5 | QA | Tests dans un vrai navigateur (`07-rapport-qa.md`), jusqu'à 3 tours de corrections | — |
+| 6 | Sécurité | Audit (`08-rapport-securite.md`). **Bloque la mise en ligne** en cas de faille grave | Accepter ou non un scan approfondi |
+| 7 | DevOps | Repo GitHub et mise en ligne Netlify (`09-deploiement.md`) | **Valider** la mise en ligne |
+
+Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
+
+## Ce que l'équipe ne fait pas (encore)
+
+- Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]`.
+- Les images sont des emplacements à remplacer par vos photos.
+- Les mentions légales sont des modèles à faire relire.
+- Le nom de domaine personnalisé se configure ensuite dans Netlify.
+
+## Contenu du repo
+
+Ce repo est une **marketplace Claude Code** (`.claude-plugin/marketplace.json`) qui contient 10 plugins :
+
+| Plugin | Rôle | Origine |
 |---|---|---|
-| Qui décide de l'ordre des étapes ? | Ton code | Le modèle |
-| Prévisibilité | Forte | Plus faible |
-| Coût et rapidité | Maîtrisés | Variables, souvent plus élevés |
-| Quand l'utiliser ? | Le chemin peut être écrit à l'avance | Le chemin dépend de ce qu'on découvre en route |
+| `workflow-ia` | Orchestrateur `/creer-site` et les 9 agents | ce projet |
+| `ui-ux-pro-max` | Design system, palettes, typographies, règles UX | [nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
+| `openclaw-skills` | `github`, `spike`, `skill-creator` | [OpenClaw](https://github.com/openclaw/openclaw) |
+| `copywriting-kit` | Rédaction de pages | Sergey Skripko |
+| `seo-audit` | Audit SEO technique | Sergey Skripko |
+| `backend-design` | Conception et sécurité backend | [sheitabrk](https://github.com/sheitabrk/backend-design) |
+| `backend-performance-review` | Performance backend | [Sanoy24](https://github.com/Sanoy24/backend-performance-review) |
+| `solofounder` | Vérification, TDD, débogage | Oleksandr Karpinskyi |
+| `agent-discussion` | Débat entre agents | [cyrusxyl](https://github.com/cyrusxyl/agent-discussion) |
+| `adaptive-agent` | Amélioration continue des skills | [truenorth-lj](https://github.com/truenorth-lj/adaptive-agent-skill) |
 
-Règle d'or : **commence par la solution la plus simple**. Un seul appel bien
-écrit suffit souvent. On ajoute des étapes seulement quand elles améliorent
-vraiment le résultat.
+Tous les plugins tiers sont sous licence MIT et redistribués avec leur licence d'origine. Le détail des sources, versions et modifications est dans [NOTICE.md](NOTICE.md) et [docs/skills-et-plugins.md](docs/skills-et-plugins.md).
 
-## Le parcours
+## Licence
 
-| Étape | Fichier | Ce que tu apprends |
-|---|---|---|
-| 1 | `etapes/e01_appel_simple.py` | Un appel à Claude, le rôle du prompt système |
-| 2 | `etapes/e02_sortie_structuree.py` | Obtenir des données fiables (Pydantic) au lieu de texte libre |
-| 3 | `etapes/e03_chainage.py` | **Chaînage** : découper en étapes, avec des contrôles en Python entre elles |
-| 4 | `etapes/e04_routage.py` | **Routage** : classer, puis envoyer vers un prompt spécialisé |
-| 5 | `etapes/e05_parallelisation.py` | **Parallélisation** : traiter plusieurs produits en même temps |
-| 6 | `etapes/e06_evaluateur_optimiseur.py` | **Évaluateur-optimiseur** : rédiger, relire avec une grille, corriger |
-| 7 | `etapes/e07_agent.py` | **Agent** : Claude choisit lui-même ses outils pour accomplir un objectif |
-
-### Étape 1 — Un seul appel
-
-La brique de base. Remarque le **prompt système** : il fixe le rôle et les
-règles (ici, « signaler les défauts »). Change-le et observe la différence.
-
-### Étape 2 — Sortie structurée
-
-`FicheProduit` (dans `fiches/modeles.py`) définit les champs attendus. Claude
-est contraint de répondre dans ce format : plus besoin de découper du texte.
-C'est ce qui permet de **brancher** un appel IA sur la suite de ton programme.
-
-### Étape 3 — Chaînage
-
-```
-notes ──► extraire les faits ──► [contrôle Python] ──► rédiger ──► post Instagram
-```
-
-Pourquoi découper ? Chaque étape est plus simple, donc plus fiable, et tu peux
-vérifier le résultat intermédiaire. Le rédacteur ne reçoit que les faits
-extraits, ce qui limite les inventions. Le contrôle (`controler`) est du code
-classique : s'il détecte un article abîmé, la chaîne s'arrête.
-
-### Étape 4 — Routage
-
-Un premier appel classe le produit (vêtement, déco, accessoire), puis ton code
-choisit le bon spécialiste. Chaque prompt spécialisé reste court et ciblé.
-
-### Étape 5 — Parallélisation
-
-Les produits sont indépendants : on les traite en même temps avec un
-`ThreadPoolExecutor`. Même résultat, beaucoup plus vite.
-
-### Étape 6 — Évaluateur-optimiseur
-
-Un rédacteur écrit, un relecteur note la fiche avec une **grille précise**, et
-on recommence avec ses remarques. Deux points clés :
-- la grille est concrète et vérifiable (« 70 caractères max »), pas « fais mieux » ;
-- le nombre de tours est **limité** (`MAX_TOURS`) pour éviter une boucle sans fin.
-
-### Étape 7 — Agent avec outils
-
-Claude reçoit un objectif (« publie les fiches manquantes ») et quatre outils
-Python : lister les produits, lire les notes, consulter les prix du marché,
-enregistrer une fiche. Il décide seul de l'enchaînement. Les fiches finales
-sont écrites dans `sortie/`. Relance le script : l'agent voit qu'il n'y a plus
-rien à faire.
-
-Remarque que l'outil `enregistrer_fiche` **vérifie** la longueur du titre et
-renvoie une erreur explicite : l'agent la lit et corrige lui-même.
-
-## Organisation du code
-
-```
-fiches/commun.py    client, modèle, fonctions demander() et demander_structure()
-fiches/modeles.py   formats de données (Pydantic)
-donnees/produits.json   les notes brutes des 4 produits d'exemple
-etapes/             un script par étape
-```
-
-Tous les appels passent par `fiches/commun.py`. On y règle :
-- `MODELE` : le modèle Claude utilisé ;
-- `effort` : combien Claude réfléchit (`low` pour les tâches simples,
-  `medium` pour la relecture et l'agent) ;
-- le **repli automatique** (`fallbacks`) : si une requête est déclinée par les
-  filtres de sécurité, l'API la relance sur un autre modèle.
-
-## Exercices
-
-1. **Étape 1** — Ajoute tes propres produits dans `donnees/produits.json`.
-2. **Étape 2** — Ajoute un champ `conseil_entretien: str` à `FicheProduit`.
-3. **Étape 3** — Ajoute une 4ᵉ étape qui traduit la fiche en anglais.
-4. **Étape 4** — Crée une catégorie « bijoux » avec son spécialiste.
-5. **Étape 6** — Ajoute un critère à la grille et observe combien de tours il faut.
-6. **Étape 7** — Ajoute un outil `lire_photo` qui envoie une image du produit
-   à Claude (voir la documentation « vision » du SDK).
-7. **Bonus** — Combine tout : routage → chaînage → évaluateur, en parallèle
-   sur tous les produits. C'est un vrai pipeline de production.
-
-## Pour aller plus loin
-
-- Documentation de l'API : https://platform.claude.com/docs
-- Article de référence sur ces schémas : « Building effective agents » (Anthropic)
+Le code de ce projet (`plugins/workflow-ia`, documentation) est sous licence [MIT](LICENSE). Chaque plugin tiers du dossier `plugins/` garde sa propre licence, voir [NOTICE.md](NOTICE.md).

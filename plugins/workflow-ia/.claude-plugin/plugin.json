@@ -1,0 +1,32 @@
+{
+  "name": "workflow-ia",
+  "displayName": "Workflow IA : un site web en un prompt",
+  "version": "0.1.0",
+  "description": "Une équipe de 9 agents IA (brainstorming, architecte, designer, rédacteur, développeurs, QA, sécurité, DevOps) qui transforme un prompt en site web déployé. Lancer avec /workflow-ia:creer-site.",
+  "author": {
+    "name": "Andy Sagbo",
+    "url": "https://github.com/andysags"
+  },
+  "homepage": "https://github.com/andysags/workflow-ia",
+  "repository": "https://github.com/andysags/workflow-ia",
+  "license": "MIT",
+  "keywords": [
+    "site-web",
+    "multi-agents",
+    "mvp",
+    "netlify",
+    "astro",
+    "no-code"
+  ],
+  "dependencies": [
+    "ui-ux-pro-max",
+    "openclaw-skills",
+    "copywriting-kit",
+    "seo-audit",
+    "backend-design",
+    "backend-performance-review",
+    "solofounder",
+    "agent-discussion",
+    "adaptive-agent"
+  ]
+}

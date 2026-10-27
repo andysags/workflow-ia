@@ -1,0 +1,161 @@
+# Supported technologies
+
+Support is tiered, and the tiers are honest. Most technologies are now `deep`, but a
+`conceptual` or `generic` one still gets a real review — the methodology still applies, and
+a review says so in its scope section rather than implying depth it does not have.
+
+This page is derived from `skills/backend-performance-review/registry.yaml`, which is the
+single source of truth. If the two disagree, the registry is right and this page is stale.
+
+---
+
+## The tiers
+
+| Tier | What you get | What you do not get |
+|:--|:--|:--|
+| **Deep** | Dedicated technology reference: engine-specific failure modes, diagnostic commands with production-safety labels, configuration trade-offs, version caveats | Nothing withheld — this is the intended depth |
+| **Conceptual** | Full category-level analysis: the data-modeling questions, access-pattern reasoning, and universal principles for that category | Engine-specific failure modes, diagnostics, config knobs. Findings that would depend on them are marked as unknowns |
+| **Generic** | Universal methodology only: workload, critical paths, round trips, boundedness, growth, shared resources | Category-level reasoning as well as engine specifics. The skill infers the category, applies universal principles, and states plainly what it cannot determine |
+
+Regardless of tier, the skill never fabricates engine behavior. `Generic` means a shorter,
+more careful section — not a guessed one.
+
+**Current coverage:** 39 deep · 0 conceptual · 0 generic (39 detection signals). Every detection signal now has a dedicated technology reference.
+
+---
+
+## Datastores
+
+| Technology | Category | Tier | Notes |
+|:--|:--|:--|:--|
+| **PostgreSQL** | relational | **deep** | Includes TimescaleDB and pgvector detection; those extensions are themselves out of scope |
+| **MongoDB** | document | **deep** | Atlas-specific features (Search, Federation, Online Archive) out of scope |
+| **MySQL / MariaDB** | relational | **deep** | InnoDB's clustered-index primary-key design, `REPEATABLE READ` gap/next-key locking, and buffer-pool sizing versus Postgres-style guidance |
+| **SQL Server** | relational | **deep** | Lock escalation, RCSI/snapshot-isolation opt-in, tempdb as a shared bottleneck, parameter sniffing, heap forwarding-pointer fragmentation, and `NOLOCK`'s correctness risk |
+| **Oracle Database** | relational | **deep** | Bind-variable/shared-pool hard-parse storms, undo-based read consistency and `ORA-01555`, PL/SQL context-switch cost, bitmap-index OLTP locking risk, and sequence-cache contention |
+| **SQLite** | relational | **deep** | Whole-file single-writer locking, WAL-mode checkpoint growth, connection pooling's write-throughput ceiling, network-filesystem locking hazards, and type-affinity index misses |
+| **CockroachDB** | relational | **deep** | Application-visible serializable retry errors, sequential-key hot ranges, the Raft consensus write-latency floor, and follower reads. **Speaks the Postgres wire protocol** — a repo using it looks like Postgres in every manifest |
+| **Couchbase** | document | **deep** | KV path versus N1QL/SQL++ cost gap, resident-ratio/cache-miss as the health metric, primary-index full scans, vBucket distribution, and per-operation durability levels |
+| **Cloud Firestore** | document | **deep** | Per-document read billing as the binding constraint, mandatory composite indexes and write-amplifying auto-indexing, the ~1 write/sec/document ceiling, and monotonic-key hotspots. Native versus Datastore mode changes the semantics |
+| **DynamoDB** | key-value | **deep** | Partition-key-driven hot partitions, `Scan`'s per-item-examined cost model, and GSI throttling propagating back to the base table |
+| **Neo4j** | graph | **deep** | Page cache versus heap as the split that decides whether index-free adjacency is fast, indexes anchoring rather than accelerating traversal, `Eager`/`CartesianProduct` plan hazards, dense-node thresholds, and driver routing scheme |
+| **Amazon Neptune** | graph | **deep** | Three query languages over two data models, cluster/reader/instance endpoint routing (and reader-endpoint DNS pinning), instance class as the only memory lever, and the bulk loader versus per-row inserts |
+| **Cassandra / ScyllaDB** | wide-column | **deep** | Compaction-strategy trade-offs, tombstone thresholds, LWT/Paxos cost, `ALLOW FILTERING`/batch anti-patterns, and Cassandra-vs-Scylla (JVM GC vs shard-per-core) divergence |
+| **ClickHouse** | wide-column | **deep** | MergeTree engine-variant correctness trade-offs, `ORDER BY`-vs-`PARTITION BY`, sparse-index granularity, async mutations, "too many parts," and in-memory join limits |
+| **Elasticsearch / OpenSearch** | search | **deep** | Circuit breakers, heap-vs-page-cache sizing, `_source`/doc-values/stored-field layers, scroll/search_after/PIT trade-offs, bulk-queue rejection. Solr specifics (ZooKeeper/SolrCloud, `solrconfig.xml`) remain unknowns |
+| **InfluxDB** | time-series | **deep** | The 1.x/2.x/3.x split as the dominant fact (3.x largely removes the cardinality wall), `inmem` versus TSI deciding whether cardinality growth OOMs or degrades, shard-duration/retention alignment, and unbatched line-protocol writes |
+| **Pinecone / Weaviate / Qdrant / Milvus / Chroma / pgvector / FAISS / LanceDB** | vector | **deep** | Comparative: the search-breadth parameter's real name in each engine, filter-integration differences, deployment model (managed service vs. self-hosted server vs. in-process library vs. disk-first), and Milvus's explicit index-type choice |
+| **S3-compatible / GCS / Azure Blob / MinIO** | object-store | **deep** | Comparative: read-after-write consistency resolved per provider, multipart/block/compose mechanics and limits, archive-tier retrieval as an availability trap, and MinIO's self-hosted infrastructure as a real review question |
+
+## Caches
+
+| Technology | Tier | Notes |
+|:--|:--|:--|
+| **Redis / Valkey** | **deep** | Redis Stack modules (Search, JSON, TimeSeries, vector) out of scope |
+| **Memcached** | **deep** | Slab-allocation calcification, client-side sharding/hashing blast radius, no persistence/replication/clustering, and the multi-threaded (vs Redis single-threaded) execution model |
+
+## Message brokers and queues
+
+| Technology | Tier | Notes |
+|:--|:--|:--|
+| **Kafka / Redpanda** | **deep** | Consumer-group rebalancing blast radius, `max.poll.interval.ms` eviction, `acks` durability trade-offs, retention vs. log compaction |
+| **RabbitMQ** | **deep** | The cluster-wide memory-alarm blast radius from one backed-up queue, prefetch/QoS, and exchange routing cost |
+| **Amazon SQS** | **deep** | Visibility timeout as the specific lease mechanism, Standard's documented at-least-once/best-effort-ordering behavior, FIFO's per-message-group throughput ceiling, and long-polling's completeness (not just cost) implication |
+| **Celery / Sidekiq / BullMQ / RQ / Dramatiq / Hangfire / Temporal / Asynq** | **deep** | Comparative: backing store as the throughput/failure-mode determinant (Hangfire's SQL-backed default vs. everything else's Redis/broker backend), wildly differing default retry behavior per library, Celery's selectable worker pool, and Temporal as a durable-execution engine rather than a simple job queue |
+
+All brokers get the full `distributed/retries-and-backpressure.md` and
+`distributed/timeouts-and-deadlines.md` analysis, which covers most of what matters at the
+application layer. `technology/kafka.md` adds the concrete Kafka-specific mechanisms on top:
+the rebalancing protocol behind partition-bounded parallelism, why exceeding
+`max.poll.interval.ms` evicts a still-alive consumer, the `acks` durability/latency spectrum,
+and why retention is independent of consumption (a log, not a queue).
+
+## Runtimes
+
+| Runtime | Tier |
+|:--|:--|
+| **Node.js** | **deep** |
+| **Python (CPython)** | **deep** |
+| **JVM (Java / Kotlin)** | **deep** |
+| **Go** | **deep** |
+| **.NET** | **deep** |
+| **Rust** | **deep** |
+| **PHP** | **deep** |
+| **Ruby** | **deep** |
+
+All runtimes get `runtimes/universal.md`, which is a taxonomy rather than a survey: the skill
+places the runtime on five dimensions — execution model, parallelism, concurrency model,
+memory management, startup cost — and the relevant failure modes follow. `technology/node.md`
+adds the event-loop-phase, libuv-threadpool, and V8-heap-ceiling specifics the taxonomy
+deliberately leaves generic. `technology/python.md` does the same for CPython: the WSGI-vs-ASGI
+concurrency-model split that determines the severity of an identical blocking call, the GIL as
+the concrete mechanism behind the runtime's parallelism dimension, and reference counting as the
+primary (not generational-only) memory-reclamation path. `technology/jvm.md` covers the
+thread-per-request/reactive/virtual-thread concurrency split, JIT warm-up as a first-class
+performance dimension, the choice between real GC algorithms (Parallel, G1, ZGC/Shenandoah) and
+their pause/throughput trade-offs, and off-heap/metaspace memory as invisible to heap-only
+monitoring. `technology/go.md` covers the M:N goroutine scheduler that makes blocking calls
+mostly (not entirely) cheap, goroutine leaks as this runtime's distinctive resource-growth
+pattern, `GOMAXPROCS`-vs-container-CPU-quota mismatches, and the GC's budget-based
+(`GOGC`/`GOMEMLIMIT`) tuning model rather than a choice between algorithms. `technology/dotnet.md`
+covers thread-pool starvation from sync-over-async as the CLR's core concurrency failure mode
+(a distinct symptom shape from a stalled event loop: progressive latency degradation, not
+collapse), the narrower sync-over-async deadlock condition, value-type boxing as a checkable
+GC-pressure regression, and the Server-vs-Workstation GC trade-off. `technology/rust.md` covers
+the absence of a GC entirely (deterministic RAII-based reclamation, with `Rc`/`Arc` reference
+cycles as the one leak vector that survives it), the fact that the async runtime is a third-party
+choice (almost always Tokio) rather than a language feature, the narrower blast radius of a
+blocked worker under Tokio's multi-threaded scheduler versus a genuinely single-threaded event
+loop, and `spawn_blocking` as the idiomatic fix. This completes the per-runtime references
+planned for this coverage push.
+
+## API surfaces
+
+| Surface | Tier | Notes |
+|:--|:--|:--|
+| REST (FastAPI, Flask, Django, Express, NestJS, Koa, Gin, Echo, Fiber, Spring Boot, Actix, Axum, Laravel, Rails, ASP.NET Core) | **deep** | Comparative: concurrency model divergence (event-loop vs. thread/process/goroutine-per-request), request body-size defaults, Fiber's non-`net/http` foundation, PHP-FPM's process-per-request model |
+| GraphQL | **deep** | The resolver-tree execution model that makes GraphQL's N+1 structural rather than incidental, DataLoader's request-scoped batching mechanism, caller-controlled query shape (depth/breadth), and federation's per-subgraph fan-out |
+| gRPC | **deep** | HTTP/2 stream multiplexing versus connection-pool sizing, Protobuf message-shape (de)serialization cost, streaming-call state lifetime, and automatic deadline propagation |
+
+## Infrastructure
+
+| Technology | Tier | Notes |
+|:--|:--|:--|
+| Docker | **deep** | PID 1 signal-handling and zombie-reaping gaps, layer-caching/pull-time effects on scale-up latency, copy-on-write cost on the writable layer, and `HEALTHCHECK` as a mechanism distinct from an orchestrator's own probes |
+| Kubernetes / Helm | **deep** | The CFS-quota mechanism behind CPU throttling, QoS-class-driven eviction order, HPA's polling lag and scale-down stabilization window, `startupProbe` as the fix for slow-starting containers, and namespace-level `ResourceQuota`/`LimitRange` as a ceiling above a pod's own limits |
+| Serverless (Lambda, Cloud Functions, Azure Functions, Vercel, Netlify) | **deep** | Comparative: warm-instance mitigation levers per platform, Lambda VPC-attachment's ENI cold-start cost, wildly differing invocation-duration ceilings, and the module-scope/handler split expressed differently per platform and language |
+| Terraform | **deep** | Not a runtime — a map from provider resource types (`aws_ecs_task_definition`, `google_cloud_run_service`, `azurerm_linux_function_app`, and others) to the exact arguments `infrastructure/resources.md`'s arithmetic needs, plus how modules and per-environment `.tfvars` can hide or redirect those values |
+
+Serverless gets specific treatment in `infrastructure/resources.md`, because standard
+connection-pooling advice inverts under a per-invocation model.
+
+---
+
+## Technologies not listed
+
+Not a failure case. The skill will:
+
+1. Infer the category from the query interface, connection scheme, and usage patterns.
+2. Apply universal datastore or runtime principles for that category.
+3. Inspect its configuration and how the code actually uses it.
+4. State what can be safely inferred and what cannot.
+5. Recommend the validation that would determine the rest.
+
+It will not invent engine-specific facts. A review of an unfamiliar engine produces a shorter,
+more hedged section — which is the correct output, not a degraded one.
+
+---
+
+## Roadmap
+
+**The 1.0.0 milestone — leave nothing below `deep` — is complete.** All 39 detection signals
+are now `deep`: every datastore, cache, broker, runtime, API-surface framework, and
+infrastructure signal. No signal in `registry.yaml` is `conceptual` or `generic` any more.
+The multi-vendor umbrellas (vector stores, object storage, task queues, REST frameworks, and
+now serverless) are each covered by a deliberately comparative technology file rather than a
+per-vendor split — see `docs/roadmap.md` for the reasoning, and for what the project measures
+and works on next now that this milestone is closed.
+
+Adding a new technology remains a bounded, well-defined contribution once a genuinely new
+engine, framework, or platform emerges: one reference file, one registry line, one README
+row. See [extending.md](extending.md).
