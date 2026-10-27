@@ -1,37 +1,117 @@
-# workflow-ia : du prompt au site en ligne
+# workflow-ia : un site web en un prompt
 
-Un seul prompt décrit le site voulu (« un site vitrine pour mon restaurant à Cotonou, avec menu et réservation »).
-Une équipe d'agents IA, chacun spécialisé, accompagne ensuite l'utilisateur du brainstorming jusqu'au
-déploiement d'un MVP en ligne.
+Décrivez le site que vous voulez en une phrase. Une équipe de 9 agents IA s'occupe du reste, du cahier des charges jusqu'à la mise en ligne sur Netlify, en vous demandant votre avis aux moments importants.
 
-## L'équipe d'agents
+```
+/workflow-ia:creer-site Un site vitrine pour mon restaurant à Cotonou, avec le menu et la réservation de table
+```
 
-| # | Agent | Livrable |
+## Installation
+
+### 1. Prérequis
+
+- [Claude Code](https://code.claude.com) (abonnement Claude)
+- [Node.js](https://nodejs.org) 20 ou plus, `git`, et [Python 3](https://www.python.org)
+- Pour la mise en ligne : un compte [Netlify](https://www.netlify.com) gratuit et un jeton d'accès (voir plus bas)
+- Optionnel : la [CLI GitHub](https://cli.github.com) connectée (`gh auth login`), pour que le code de chaque site soit poussé sur votre GitHub
+
+### 2. Installer le plugin
+
+Dans Claude Code, tapez ces deux commandes :
+
+```
+/plugin marketplace add andysags/workflow-ia
+/plugin install workflow-ia@workflow-ia
+```
+
+Le plugin `workflow-ia` installe automatiquement ses 9 dépendances (design, rédaction, SEO, backend…).
+
+### 3. Ajouter les plugins recommandés
+
+Ils ne sont pas obligatoires : sans eux, les agents utilisent une solution de repli. Ils rendent l'équipe plus efficace.
+
+```
+/plugin install playwright@claude-plugins-official
+/plugin install claude-security@claude-plugins-official
+/plugin marketplace add netlify/context-and-tools
+/plugin install netlify-skills@netlify-context-and-tools
+/plugin marketplace add anthropics/knowledge-work-plugins
+/plugin install product-management@knowledge-work-plugins
+```
+
+Si Claude Code ne trouve pas `claude-plugins-official`, ajoutez-la d'abord : `/plugin marketplace add anthropics/claude-plugins-official`.
+
+Tapez ensuite `/reload-plugins`, ou redémarrez Claude Code.
+
+### Variante : cloner le repo
+
+```bash
+git clone https://github.com/andysags/workflow-ia.git
+cd workflow-ia
+claude
+```
+
+Acceptez la confiance du dossier. Les marketplaces sont alors enregistrées automatiquement, mais il faut toujours installer le plugin avec la commande `/plugin install workflow-ia@workflow-ia`.
+
+### 4. Jeton Netlify (pour la mise en ligne)
+
+1. Sur Netlify : **User settings → Applications → Personal access tokens → New access token**.
+2. Avant de lancer Claude Code, définissez-le dans votre terminal :
+   - macOS / Linux : `export NETLIFY_AUTH_TOKEN="votre-jeton"`
+   - Windows (PowerShell) : `$env:NETLIFY_AUTH_TOKEN="votre-jeton"`
+
+Ne collez jamais ce jeton dans la conversation. Sans jeton, le site est construit et testé en local, et vous pourrez le mettre en ligne plus tard.
+
+## Utilisation
+
+Placez-vous dans le dossier où vous voulez créer vos sites, lancez `claude`, puis :
+
+```
+/workflow-ia:creer-site <description de votre site>
+```
+
+Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de travail. Pour reprendre un projet interrompu :
+
+```
+/workflow-ia:creer-site reprendre <nom-du-site>
+```
+
+## Ce qui se passe
+
+| Étape | Agent | Ce qu'il produit | Votre rôle |
+|---|---|---|---|
+| 1 | Brainstorming | Cahier des charges du MVP (`01-brief.md`) | Répondre à quelques questions, puis **valider** |
+| 2 | Architecte | Choix techniques (`02-architecture.md`) | — |
+| 3 | Designer + Rédacteur | Charte graphique (`03-design.md`), textes et SEO (`04-contenu.md`) | **Valider**, donner les infos manquantes (adresse, prix…) |
+| 4 | Dev front (+ Dev back si besoin) | Le site (`site/`) | — |
+| 5 | QA | Tests dans un vrai navigateur (`07-rapport-qa.md`), jusqu'à 3 tours de corrections | — |
+| 6 | Sécurité | Audit (`08-rapport-securite.md`). **Bloque la mise en ligne** en cas de faille grave | Accepter ou non un scan approfondi |
+| 7 | DevOps | Repo GitHub et mise en ligne Netlify (`09-deploiement.md`) | **Valider** la mise en ligne |
+
+Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
+
+## Ce que l'équipe ne fait pas (encore)
+
+- Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]`.
+- Les images sont des emplacements à remplacer par vos photos.
+- Les mentions légales sont des modèles à faire relire.
+- Le nom de domaine personnalisé se configure ensuite dans Netlify.
+
+## Contenu du repo
+
+Ce repo est une **marketplace Claude Code** (`.claude-plugin/marketplace.json`) qui contient 10 plugins :
+
+| Plugin | Rôle | Origine |
 |---|---|---|
-| 1 | Brainstorming / Product | Cahier des charges (`01-brief.md`) |
-| 2 | Architecte | Plan technique (`02-architecture.md`) |
-| 3 | Designer UI/UX | Design system (`03-design.json`) |
-| 4 | Rédacteur / SEO | Contenus (`04-contenu.md`) |
-| 5 | Dev front | Code du site (`site/`) |
-| 6 | Dev back (si besoin) | API, formulaires, base de données |
-| 7 | QA | Rapport de tests (`07-rapport-qa.md`) |
-| 8 | Sécurité | Rapport d'audit (`08-rapport-secu.md`), peut bloquer le déploiement |
-| 9 | DevOps | URL en ligne (`09-deploiement.json`) |
+| `workflow-ia` | Orchestrateur `/creer-site` et les 9 agents | ce projet |
+| `ui-ux-pro-max` | Design system, palettes, typographies, règles UX | [nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
+| `openclaw-skills` | `github`, `spike`, `skill-creator` | [OpenClaw](https://github.com/openclaw/openclaw) |
+| `copywriting-kit` | Rédaction de pages | Sergey Skripko |
+| `seo-audit` | Audit SEO technique | Sergey Skripko |
+| `backend-design` | Conception et sécurité backend | [sheitabrk](https://github.com/sheitabrk/backend-design) |
+| `backend-performance-review` | Performance backend | [Sanoy24](https://github.com/Sanoy24/backend-performance-review) |
+| `solofounder` | Vérification, TDD, débogage | Oleksandr Karpinskyi |
+| `agent-discussion` | Débat entre agents | [cyrusxyl](https://github.com/cyrusxyl/agent-discussion) |
+| `adaptive-agent` | Amélioration continue des skills | [truenorth-lj](https://github.com/truenorth-lj/adaptive-agent-skill) |
 
-Un orchestrateur fait circuler les livrables entre les agents et demande la validation de
-l'utilisateur aux étapes clés : cahier des charges, maquette, mise en ligne.
-
-## Skills et plugins
-
-Chaque agent s'appuie sur des skills et plugins existants. Les skills installés sont dans
-`.claude/skills/`, et les plugins sont déclarés dans `.claude/settings.json`.
-L'inventaire complet par agent est dans [docs/skills-et-plugins.md](docs/skills-et-plugins.md).
-
-## Feuille de route
-
-1. **Fondations** : orchestrateur, dossier projet et agent Brainstorming
-2. **Premier site** : Architecte et Dev front
-3. **Mise en ligne** : DevOps (premier MVP)
-4. **Qualité** : Designer, Rédacteur, QA et Sécurité, avec les boucles de correction
-5. **Expérience utilisateur** : application web et suivi en temps réel
-6. **Sites complexes** : Dev back et e-commerce
+Tous les plugins tiers sont sous licence MIT et redistribués avec leur licence d'origine. Le détail des sources, versions et modifications est dans [NOTICE.md](NOTICE.md) et [docs/skills-et-plugins.md](docs/skills-et-plugins.md).
