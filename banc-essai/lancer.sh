@@ -25,6 +25,7 @@ ALLOWED=(
   "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(python *)" "Bash(python3 *)"
   "Bash(bash *)" "Bash(git *)" "Bash(ls *)" "Bash(mkdir *)" "Bash(cat *)" "Bash(curl *)"
   "Bash(cd *)" "Bash(kill *)" "Bash(sleep *)" "Bash(grep *)" "Bash(wc *)"
+  "Bash(cp *)" "Bash(mv *)" "Bash(echo *)" "Bash(test *)" "Bash(head *)" "Bash(tail *)"
   "mcp__plugin_playwright_playwright__*"
 )
 
