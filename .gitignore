@@ -5,3 +5,6 @@ sortie/
 
 # Banc d'essai
 banc-essai/resultats/
+
+# Local Netlify folder
+.netlify
