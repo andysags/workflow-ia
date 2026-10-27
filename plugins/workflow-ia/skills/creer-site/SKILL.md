@@ -47,7 +47,8 @@ Le mode automatique s'active si `$ARGUMENTS` contient `--auto` (retire-le de la 
 3. Vérifie les prérequis : `bash "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/prerequis.sh"`. Si un outil obligatoire manque, explique comment l'installer et arrête-toi. Les manques optionnels (gh, Netlify) sont signalés et le travail continue.
 4. Choisis un slug à partir de la demande, crée `sites/<slug>/`, écris `00-demande.md` (le prompt exact) et `etat.json`.
 5. **Éléments existants du client.** S'il a donné `--sources` (fichiers, URL) ou collé du contenu dans sa demande, garde-les. Sinon, en mode interactif, demande-lui une seule fois s'il a déjà des éléments : photos, menu ou catalogue, flyer, documents, page Facebook ou fiche Google, ancien site. Ils évitent des dizaines de `[À COMPLÉTER]`. S'il n'en a pas, continue.
-6. S'il y a des sources, lance `workflow-ia:collecteur` (texte collé enregistré dans `sources/texte-client.md`). Résume ce qui a été trouvé et, en mode interactif, fais trancher les conflits. Tous les agents suivants liront `00-faits.md`.
+6. S'il y a des sources rangées hors du dossier de travail, copie-les d'abord dans `sites/<slug>/sources/` (voir « Fichiers rangés ailleurs » dans `${CLAUDE_PLUGIN_ROOT}/skills/modifier-site/SKILL.md`).
+7. S'il y a des sources, lance `workflow-ia:collecteur` (texte collé enregistré dans `sources/texte-client.md`). Résume ce qui a été trouvé et, en mode interactif, fais trancher les conflits. Tous les agents suivants liront `00-faits.md`.
 
 ## Étape 1/8 : cahier des charges (agent `brainstorming`)
 

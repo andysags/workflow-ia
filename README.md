@@ -91,6 +91,8 @@ Photos, menu ou catalogue (même photographié), flyer, documents, texte, page F
 /workflow-ia:creer-site Un site pour mon restaurant à Cotonou --sources menu.jpg infos.txt photo-salle.jpg
 ```
 
+Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils sont ailleurs (Téléchargements, Bureau…), Claude Code vous demandera l'autorisation de les copier dans le projet.
+
 ### Faire évoluer un site
 
 ```

@@ -21,13 +21,13 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 
 ## Méthode
 
-1. Crée `<dossier-projet>/sources/` (originaux) et `<dossier-projet>/sources/medias/` (images retenues pour le site).
+1. Crée `<dossier-projet>/sources/` (originaux) et `<dossier-projet>/sources/medias/` (images retenues pour le site). Les sources te sont normalement données déjà copiées dans `sources/`. Si une copie est refusée (fichier hors du dossier de travail), ne la contourne pas : lis l'original si tu le peux, et signale dans « Sources analysées » les fichiers à copier par le client.
 2. **Fichiers** : copie chaque fichier reçu dans `sources/` (sans le modifier). Lis-le :
    - image (menu, pancarte, flyer, photo) : outil Read sur l'image, puis relève le texte visible et décris ce que montre la photo ;
    - PDF : outil Read avec `pages` (20 pages maximum par lecture) ;
    - texte, Word exporté en texte, tableur CSV : outil Read.
 3. **URL** (page Facebook, fiche Google, site existant, Instagram) : récupère la page avec WebFetch. Beaucoup de réseaux sociaux exigent une connexion : si la page est inaccessible ou vide, **dis-le** dans le rapport et demande au client une capture d'écran ou un copier-coller. N'invente jamais le contenu d'une page que tu n'as pas pu lire.
-4. **Photos pour le site** : sélectionne les photos utilisables (nettes, cadrées, sans personnes identifiables sans accord, sans texte d'un tiers). Copie-les dans `sources/medias/` avec un nom parlant (`plat-sauce-arachide.jpg`, `salle-terrasse.jpg`). Pour chacune, prépare un texte alternatif factuel.
+4. **Photos pour le site** : sélectionne les photos utilisables (nettes, cadrées, sans personnes identifiables sans accord, sans texte d'un tiers). Copie-les dans `sources/medias/` (une commande `cp` simple par fichier) avec un nom parlant (`plat-sauce-arachide.jpg`, `salle-terrasse.jpg`). Pour chacune, prépare un texte alternatif factuel.
 5. Écris `00-faits.md`.
 
 ## Livrable : `<dossier-projet>/00-faits.md`

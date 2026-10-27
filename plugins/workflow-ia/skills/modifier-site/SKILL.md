@@ -21,6 +21,9 @@ Conventions des agents : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/con
 
 ## Étape 1 : collecte (si des sources sont fournies)
 
+**Fichiers rangés ailleurs** : Claude Code ne lit et ne copie librement que dans le dossier où il a été lancé. Si une source est ailleurs (Téléchargements, Bureau…), copie-la toi-même dans `sites/<slug>/sources/` avec **une commande `cp` par fichier**, avant de lancer le collecteur. Le client verra une demande d'autorisation : dis-lui en une phrase que c'est pour copier ses fichiers dans le projet. Si c'est refusé (ou en mode automatique), demande-lui de déposer ses fichiers dans `sites/<slug>/sources/`, ou continue sans eux et note-le comme réserve. Le collecteur travaille ensuite sur ces copies.
+
+
 Lance `workflow-ia:collecteur` avec le dossier projet et la liste des sources. Résume au client ce qui a été trouvé (`FAITS:`), les sources illisibles, et les **conflits** à trancher. En mode interactif, demande-lui de trancher les conflits et de confirmer les faits « à confirmer » qui changent le site (prix, horaires, téléphone) avant de continuer.
 
 ## Étape 2 : qualifier la modification
