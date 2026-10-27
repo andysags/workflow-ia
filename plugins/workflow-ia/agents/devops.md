@@ -32,8 +32,20 @@ Utilise le skill `openclaw-skills:github`. Vérifie `gh auth status`. Crée le r
 - Si le plugin Netlify est disponible, suis ses skills (`netlify-deploy`, `netlify-config`, `netlify-forms`).
 - Sinon, utilise la CLI officielle via `npx netlify-cli`.
 - Authentification : variable `NETLIFY_AUTH_TOKEN`. Si elle est absente, arrête-toi et explique au client comment créer un jeton (Netlify → User settings → Applications → Personal access tokens) et le définir avant de relancer. Ne demande jamais le jeton dans la conversation.
-- Création du site si besoin : `npx netlify-cli sites:create --name <slug-unique>`, puis `npx netlify-cli link`.
-- Déploiement : `npx netlify-cli deploy --build` (brouillon) ou `npx netlify-cli deploy --build --prod` (production).
+- Création du site si besoin : `npx netlify-cli sites:create --name <slug-unique>`. Note l'identifiant du site (`site_id`).
+- **URL du site** : si l'URL de production (`https://<nom>.netlify.app`, ou le domaine du client) diffère de celle configurée dans le site (`site` dans `astro.config.mjs`, canonical, `og:url`, sitemap, JSON-LD), mets-la à jour **avant** le build, sinon les liens canoniques pointent ailleurs.
+
+### Déploiement : uniquement le dossier publié
+
+**Ne déploie jamais un dossier sans le désigner explicitement.** Un déploiement lancé depuis le mauvais dossier publie tout ce qu'il contient (livrables, journaux, autres projets).
+
+1. Build local : `npm run build --prefix <dossier-projet>/site`.
+2. Contrôle du dossier publié (`<dossier-projet>/site/dist`) **avant** l'envoi : il contient `index.html`, et aucun fichier `.md`, `.jsonl`, `.env*`, `.git`, ni `node_modules`. Compte ses fichiers ; si le nombre est sans rapport avec le site (des centaines), arrête-toi.
+3. Déploiement, toujours avec `--dir` et `--site` explicites, sans `--build` (le build est déjà fait) :
+   `npx netlify-cli deploy --dir <dossier-projet>/site/dist --site <site_id>` (brouillon), ou la même commande avec `--prod` (production).
+4. Vérifie dans la sortie que le nombre de fichiers envoyés correspond au contrôle de l'étape 2. Si un mauvais dossier est parti, supprime ce déploiement immédiatement (`npx netlify-cli api deleteDeploy --data '{"deploy_id":"<id>"}'`), vérifie qu'il répond 404, et signale-le en tête de `09-deploiement.md` avec la liste de ce qui a été exposé.
+
+Un brouillon Netlify renvoie l'en-tête `X-Robots-Tag: noindex` : c'est normal (les prévisualisations ne sont pas indexées), ce n'est pas un défaut.
 - Si le Dev back a listé des variables d'environnement, rappelle-les au client (`npx netlify-cli env:set NOM valeur`), sans les inventer.
 
 ## 4. Vérification
