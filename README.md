@@ -153,7 +153,7 @@ Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
 ## Ce que l'équipe ne fait pas (encore)
 
 - Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]` : donnez vos éléments avec `--sources` pour les remplir.
-- Sans vos photos, les images sont des emplacements à remplacer. Elle ne prend jamais d'images sur internet.
+- Sans vos photos, les images sont des emplacements à remplacer. Si vous le demandez (« photos libres », ou `--photos-libres`), l'équipe met en attendant des **photos libres de droits** de Wikimedia Commons. Elle ne retient que les licences qui autorisent l'usage commercial, les choisit sans personne reconnaissable ni marque, et affiche les crédits obligatoires. Elle ne prend jamais d'images ailleurs sur internet.
 - Les mentions légales sont des modèles à faire relire.
 
 ## Qualité mesurée

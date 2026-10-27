@@ -1,7 +1,7 @@
 ---
 name: creer-site
 description: Crée un site web complet à partir d'un seul prompt, du cahier des charges jusqu'au déploiement sur Netlify, en pilotant une équipe de 11 agents spécialisés (brainstorming, architecte, designer, rédacteur, dev front, dev back, QA, sécurité, critique, vérificateur, DevOps). Utiliser quand l'utilisateur veut créer, générer ou lancer un site web, une landing page, un site vitrine ou un portfolio, ou reprendre un projet de site existant dans sites/.
-argument-hint: "<description du site>" [--sources <fichiers ou URL>] [--auto] [--premium] | reprendre <slug>
+argument-hint: "<description du site>" [--sources <fichiers ou URL>] [--photos-libres] [--auto] [--premium] | reprendre <slug>
 ---
 
 # Créer un site web en un prompt
@@ -57,19 +57,21 @@ Le mode automatique s'active si `$ARGUMENTS` contient `--auto` (retire-le de la 
    > 4. vos horaires ;
    > 5. vos principaux produits ou services, avec les prix si vous voulez les afficher ;
    > 6. vos réseaux sociaux ou votre e-mail ;
-   > 7. si vous en avez : photos, menu, flyer, page Facebook, ancien site (indiquez où sont les fichiers, ou le lien).
+   > 7. si vous en avez : photos, menu, flyer, page Facebook, ancien site (indiquez où sont les fichiers, ou le lien). Si vous n'avez pas de photos, je peux mettre des photos libres de droits en attendant les vôtres : dites « photos libres ».
    >
    > Répondez « plus tard » pour passer cette étape.
 
    Adapte la liste à l'activité : pour un événement, demande les dates, le lieu et la billetterie ; pour une association, l'objet et le moyen de don. Enregistre la réponse telle quelle dans `sources/texte-client.md`. Elle passe ensuite par le collecteur, comme les autres sources. Ne repose pas plus tard une question à laquelle le client a répondu ici.
 7. S'il y a des sources rangées hors du dossier de travail, copie-les d'abord dans `sites/<slug>/sources/` (voir « Fichiers rangés ailleurs » dans `${CLAUDE_PLUGIN_ROOT}/skills/modifier-site/SKILL.md`).
-8. S'il y a des sources (y compris la fiche express), lance `workflow-ia:collecteur` (texte collé enregistré dans `sources/texte-client.md`). Résume ce qui a été trouvé et, en mode interactif, fais trancher les conflits. Tous les agents suivants liront `00-faits.md`.
+8. **Photos libres** : si le client les a demandées (réponse « photos libres », ou option `--photos-libres`, à retirer de la description), le collecteur travaille en « mode photos libres ». Lance-le après le brief (étape 1), car il a besoin de l'activité et du pays. En mode automatique, seulement avec `--photos-libres`.
+9. S'il y a des sources (y compris la fiche express), lance `workflow-ia:collecteur` (texte collé enregistré dans `sources/texte-client.md`). Résume ce qui a été trouvé et, en mode interactif, fais trancher les conflits. Tous les agents suivants liront `00-faits.md`.
 
 ## Étape 1/8 : cahier des charges (agent `brainstorming`)
 
 1. Lance `workflow-ia:brainstorming`.
 2. S'il répond `QUESTIONS_EN_ATTENTE`, lis `01-questions.md`, pose les questions au client avec AskUserQuestion (4 questions maximum par appel), écris ses réponses dans `01-reponses.md`, puis relance l'agent.
 3. ✋ **Validation 1** : résume `01-brief.md` au client (objectif, pages, fonctionnalités, hors MVP) et demande : « Valider », « Modifier » (il dit quoi ; relance l'agent avec ses remarques), « Annuler ».
+4. Si le client a demandé des photos libres, lance maintenant `workflow-ia:collecteur` en « mode photos libres », avec le dossier projet. Il lit le brief pour choisir ses recherches.
 
 ## Étape 2/8 : architecture (agent `architecte`)
 
