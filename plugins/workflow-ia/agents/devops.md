@@ -36,12 +36,26 @@ Le déploiement se fait **uniquement** avec le script du plugin, qui enchaîne t
 - Premier déploiement :
   `node "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/deployer.mjs" <dossier-projet> --nom <nom-unique>` (ajoute `--prod` pour la production)
 
+En production, le script refuse de publier un site qui affiche encore des `[À COMPLÉTER]`. Ajoute `--accepter-incomplet` **seulement** si l'orchestrateur te transmet l'accord explicite du client. Sinon, recopie le refus (`EN_ATTENTE`).
+
 Avant de lancer le script, si l'URL de production (`https://<nom>.netlify.app`, ou le domaine du client) diffère de celle configurée dans le site (`site` dans `astro.config.mjs`, canonical, `og:url`, sitemap, JSON-LD), mets-la à jour : sinon les liens canoniques pointent ailleurs.
 
 Recopie la dernière ligne du script (`DEPLOIEMENT: …`) telle quelle comme ligne de statut. Si elle dit `EN_ATTENTE`, explique au client la raison donnée, sans la contourner : n'essaie **jamais** de déployer à la main avec `netlify deploy`, et ne cherche pas à lire le jeton (pas de `printenv`, `env`, `echo $NETLIFY_AUTH_TOKEN`).
 
 Un brouillon Netlify renvoie l'en-tête `X-Robots-Tag: noindex` : c'est normal (les prévisualisations ne sont pas indexées), ce n'est pas un défaut.
 - Si le Dev back a listé des variables d'environnement, rappelle-les au client (`npx netlify-cli env:set NOM valeur`), sans les inventer.
+
+## 3 bis. Nom de domaine personnalisé (si le client en donne un)
+
+Le client doit d'abord avoir **acheté** le domaine chez un registraire. Pour `.bj`, `.ci`, `.sn`, `.tg`…, c'est un registraire agréé du pays. Tu ne l'achètes jamais à sa place.
+
+1. Relie le domaine au site, puis contrôle le DNS :
+   `node "${CLAUDE_PLUGIN_ROOT}/skills/creer-site/scripts/domaine.mjs" --site <site_id> --domaine <domaine>`
+2. Le script affiche les enregistrements DNS à créer chez le registraire. Recopie-les **tels quels** dans `09-deploiement.md` et dans ta réponse, avec cette explication pour le client : « Connectez-vous chez le vendeur de votre domaine, ouvrez la zone DNS, créez ces lignes, puis prévenez-moi. »
+3. Mets l'URL du domaine dans le site (`site` dans `astro.config.mjs`, canonical, `og:url`, sitemap, JSON-LD), puis redéploie avec le script de déploiement.
+4. Quand le client dit avoir réglé le DNS, relance le contrôle seul : la même commande avec `--verifier`.
+
+Recopie la dernière ligne du script (`DOMAINE: …`) en plus de la ligne `DEPLOIEMENT:`. Le domaine ne bloque jamais la mise en ligne : le site reste accessible à son adresse `netlify.app`.
 
 ## 4. Vérification
 

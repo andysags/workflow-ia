@@ -31,7 +31,7 @@ Lis d'abord les conventions communes : `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/
 ## Données               (où vivent les contenus : fichiers, collections Astro…)
 ## Dépendances npm       (liste minimale, versions vérifiées)
 ## Commandes             (install, dev, build, preview)
-## Dev back nécessaire ? (OUI/NON et pourquoi)
+## Dev back nécessaire ? (OUI/NON et pourquoi ; un catalogue modifiable par le client selon `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/references/catalogue.md` impose OUI)
 ## Risques et décisions
 ```
 

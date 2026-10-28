@@ -99,7 +99,12 @@ Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils 
 /workflow-ia:modifier-site <nom-du-site> "Change les horaires : fermé le lundi"
 /workflow-ia:modifier-site <nom-du-site> "Voici mes vraies photos" --sources photos/
 /workflow-ia:modifier-site <nom-du-site> "Ajoute une page Événements"
+/workflow-ia:modifier-site <nom-du-site> "Mets le site sur chezmamaafi.bj"
 ```
+
+**Catalogue que vous modifiez vous-même :** pour un menu du jour, des prix ou un stock qui changent souvent, l'équipe peut relier votre site à un tableau **Google Sheets**. Vous changez une ligne sur votre téléphone, et le site se met à jour en 5 minutes environ, sans repasser par Claude. Demandez-le à la création, ou plus tard : `/workflow-ia:modifier-site <nom-du-site> "Je veux modifier mes prix moi-même"`.
+
+**Nom de domaine :** achetez-le d'abord chez un registraire (pour `.bj`, `.ci`, `.sn`… : un registraire agréé du pays). Le DevOps le relie au site et vous donne exactement les lignes à créer dans la zone DNS. Il vérifie ensuite que le domaine et le HTTPS fonctionnent.
 
 Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le designer), les contrôles sont proportionnés à la modification (la Sécurité intervient dès que du code, un formulaire ou une dépendance change), et le site est remis en ligne **au même endroit**. Chaque modification est notée dans `12-modifications.md`, et peut être annulée.
 
@@ -145,14 +150,13 @@ Certaines actions sont trop risquées pour reposer uniquement sur les consignes 
 
 - **Déploiement Netlify** : dans un projet workflow-ia, tout `netlify deploy` sans dossier désigné (`--dir`) est bloqué. Partout, un dossier publié qui n'est pas un site construit (pas d'`index.html`), qui contient des fichiers internes (journaux, livrables, `.env`, `.git`, `node_modules`) ou trop de fichiers est refusé. Ce garde-fou a été ajouté après un incident réel : un déploiement lancé depuis le mauvais dossier avait publié des journaux de travail.
 
-Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs`
+Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs plugins/workflow-ia/skills/creer-site/scripts/tests/*.test.mjs` (garde-fou, catalogue, photos libres, nom de domaine).
 
 ## Ce que l'équipe ne fait pas (encore)
 
 - Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]` : donnez vos éléments avec `--sources` pour les remplir.
-- Sans vos photos, les images sont des emplacements à remplacer. Elle ne prend jamais d'images sur internet.
+- Sans vos photos, les images sont des emplacements à remplacer. Si vous le demandez (« photos libres », ou `--photos-libres`), l'équipe met en attendant des **photos libres de droits** de Wikimedia Commons. Elle ne retient que les licences qui autorisent l'usage commercial, les choisit sans personne reconnaissable ni marque, et affiche les crédits obligatoires. Elle ne prend jamais d'images ailleurs sur internet.
 - Les mentions légales sont des modèles à faire relire.
-- Le nom de domaine personnalisé se configure ensuite dans Netlify.
 
 ## Qualité mesurée
 
