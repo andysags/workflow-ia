@@ -69,14 +69,28 @@ console.log(`    ${nombre} fichiers à publier, ${aCompleter} [À COMPLÉTER] vi
 if (prod && aCompleter > 0 && !accepterIncomplet)
   attente(`${aCompleter} [À COMPLÉTER] visibles dans le site : complétez-les (modifier-site), publiez en brouillon, ou relancez avec --accepter-incomplet si le client l'accepte`);
 
+// Un « base = … » dans netlify.toml fait chercher le site ailleurs (à partir de la racine git) : la CLI échoue
+// après la création du site. On le refuse avant de créer quoi que ce soit.
+const toml = join(site, "netlify.toml");
+if (existsSync(toml) && /^\s*base\s*=/m.test(readFileSync(toml, "utf8")))
+  attente(`${toml} déclare « base = … » : retirez cette ligne (le script publie directement site/dist), puis relancez`);
+
 // 3. Site Netlify
 let siteId = option("--site");
 if (!siteId) {
   const nom = option("--nom") ?? basename(projet).toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  console.log(`3/5 Création du site Netlify « ${nom} »…`);
-  const c = lancer("npx", netlify("api", "createSite", "--data", JSON.stringify({ body: { name: nom } })), { json: true });
-  if (!c.ok || !c.data?.id) attente(`création du site impossible (nom déjà pris ?) : ${(c.sortie ?? "").trim().split("\n").slice(-3).join(" | ")}`);
-  siteId = c.data.id;
+  // Un essai précédent a pu créer le site avant d'échouer : on le réutilise au lieu d'en créer un second.
+  const l = lancer("npx", netlify("api", "listSites", "--data", JSON.stringify({ name: nom, filter: "all" })));
+  const existant = l.ok ? (() => { try { return JSON.parse(l.sortie.slice(l.sortie.indexOf("["), l.sortie.lastIndexOf("]") + 1)).find((x) => x.name === nom); } catch { return null; } })() : null;
+  if (existant) {
+    siteId = existant.id;
+    console.log(`3/5 Site Netlify « ${nom} » déjà créé (${siteId}) : réutilisé.`);
+  } else {
+    console.log(`3/5 Création du site Netlify « ${nom} »…`);
+    const c = lancer("npx", netlify("api", "createSite", "--data", JSON.stringify({ body: { name: nom } })), { json: true });
+    if (!c.ok || !c.data?.id) attente(`création du site impossible (nom déjà pris par un autre compte ?) : ${(c.sortie ?? "").trim().split("\n").slice(-3).join(" | ")}`);
+    siteId = c.data.id;
+  }
 } else {
   console.log(`3/5 Site existant ${siteId}.`);
 }
@@ -87,7 +101,7 @@ console.log(`4/5 Envoi (${prod ? "production" : "brouillon"})…`);
 const d = lancer("npx", netlify("deploy", "--dir", dist, "--site", siteId, "--json",
   "--message", `workflow-ia ${new Date().toISOString().slice(0, 16)}`, ...(prod ? ["--prod"] : [])),
   { json: true, cwd: existsSync(join(site, "netlify.toml")) ? site : projet });
-if (!d.ok) attente(`envoi refusé : ${(d.sortie ?? "").trim().split("\n").slice(-3).join(" | ")}`);
+if (!d.ok) attente(`envoi refusé (site ${siteId} déjà créé : relancez avec --site ${siteId}) : ${(d.sortie ?? "").trim().split("\n").slice(-3).join(" | ")}`);
 const url = prod ? (d.data.url ?? d.data.deploy_url) : d.data.deploy_url;
 
 // 5. Vérification

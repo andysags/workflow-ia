@@ -1,6 +1,6 @@
 // Actualise la liste du catalogue avec /api/catalogue, sans recharger la page.
 // Balisage attendu (le design reste libre ; chaque modèle a UN élément racine) :
-//   <div data-catalogue>
+//   <div data-catalogue data-sheet="oui|non">   (« non » tant qu'aucun tableau n'est configuré : pas d'appel inutile)
 //     <template data-modele-categorie><h3 data-champ="categorie"></h3></template>   (facultatif)
 //     <template data-modele-article>
 //       <article><h4 data-champ="nom"></h4><p data-champ="description"></p>
@@ -19,6 +19,7 @@ function cloner(modele, marque) {
 }
 
 async function actualiser(conteneur) {
+  if (conteneur.dataset.sheet === "non") return;
   const modele = conteneur.querySelector("template[data-modele-article]");
   if (!modele?.content.firstElementChild) return;
   let donnees;

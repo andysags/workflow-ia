@@ -1,7 +1,7 @@
 {
   "name": "workflow-ia",
   "displayName": "Workflow IA : un site web en un prompt",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Une équipe de 11 agents IA (brainstorming, architecte, designer, rédacteur, développeurs, QA, sécurité, critique, vérificateur, DevOps) qui transforme un prompt en site web déployé. Lancer avec /workflow-ia:creer-site.",
   "author": {
     "name": "Andy Sagbo",

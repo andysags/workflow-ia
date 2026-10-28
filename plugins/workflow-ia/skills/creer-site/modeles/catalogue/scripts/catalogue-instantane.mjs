@@ -2,7 +2,7 @@
 // Le site affiche cet instantané même sans JavaScript, puis l'actualise via /api/catalogue.
 // Si le tableau est injoignable, l'instantané précédent est gardé : le build ne casse jamais à cause du tableau.
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { catalogueDepuisCsv, urlCatalogueValide } from "../src/lib/catalogue-csv.mjs";
+import { catalogueDepuisCsv, recupererCsv, urlCatalogueValide } from "../src/lib/catalogue-csv.mjs";
 import { CATALOGUE_CSV_URL } from "../catalogue.config.mjs";
 
 const fichier = new URL("../src/data/catalogue.json", import.meta.url);
@@ -14,7 +14,7 @@ if (!urlCatalogueValide(url)) {
   process.exit(0);
 }
 try {
-  const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15000) });
+  const r = await recupererCsv(url, { timeout: 15000 });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const { articles, erreurs } = catalogueDepuisCsv(await r.text());
   for (const e of erreurs) console.log(`catalogue : ${e}`);

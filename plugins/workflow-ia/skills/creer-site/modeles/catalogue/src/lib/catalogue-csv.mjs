@@ -14,6 +14,33 @@ export function urlCatalogueValide(url) {
   } catch { return false; }
 }
 
+// Hôtes acceptés après une redirection : Google sert souvent le CSV publié depuis doc-xx-xx-sheets.googleusercontent.com.
+const MAX_REDIRECTIONS = 3;
+export function hoteRedirectionValide(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return false;
+    return u.hostname === "docs.google.com" || /^doc-[a-z0-9-]+\.googleusercontent\.com$/.test(u.hostname);
+  } catch { return false; }
+}
+
+// Télécharge le CSV en suivant au plus 3 redirections, chacune revalidée : la fonction ne peut pas être
+// emmenée vers un autre serveur (SSRF). Renvoie la réponse finale, ou lève une erreur.
+export async function recupererCsv(url, { timeout = 8000, fetchImpl = fetch } = {}) {
+  const signal = AbortSignal.timeout(timeout);
+  let courante = url;
+  for (let i = 0; i <= MAX_REDIRECTIONS; i++) {
+    const r = await fetchImpl(courante, { redirect: "manual", signal });
+    if (r.status < 300 || r.status >= 400) return r;
+    const lieu = r.headers.get("location");
+    if (!lieu) throw new Error("redirection sans destination");
+    const suivante = new URL(lieu, courante).href;
+    if (!hoteRedirectionValide(suivante)) throw new Error("redirection vers un hôte non autorisé");
+    courante = suivante;
+  }
+  throw new Error("trop de redirections");
+}
+
 // Analyse CSV (RFC 4180 : guillemets, virgules et retours à la ligne dans les champs).
 export function lireCsv(texte) {
   const lignes = []; let ligne = []; let champ = ""; let guillemets = false;

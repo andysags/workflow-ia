@@ -30,7 +30,7 @@ Dans `${CLAUDE_PLUGIN_ROOT}/skills/creer-site/modeles/catalogue/` :
 Copie ces fichiers **sans les réécrire** : ils sont testés (`scripts/tests/catalogue.test.mjs`). Le design du catalogue reste libre, à condition d'utiliser ce balisage :
 
 ```html
-<div data-catalogue>
+<div data-catalogue data-sheet={CATALOGUE_CSV_URL ? "oui" : "non"}>   <!-- importé de catalogue.config.mjs -->
   <template data-modele-categorie><h3 data-champ="categorie"></h3></template>
   <template data-modele-article>
     <article>

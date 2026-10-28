@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const modele = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "modeles", "catalogue");
-const { catalogueDepuisCsv, lireCsv, urlCatalogueValide } = await import(join(modele, "src/lib/catalogue-csv.mjs"));
+const { catalogueDepuisCsv, lireCsv, urlCatalogueValide, recupererCsv, hoteRedirectionValide } = await import(join(modele, "src/lib/catalogue-csv.mjs"));
 const URL_OK = "https://docs.google.com/spreadsheets/d/e/2PACX-1vAbC_d-123/pub?output=csv";
 
 const CSV = [
@@ -53,6 +53,18 @@ test("n'accepte que les adresses de publication Google Sheets en CSV", () => {
   for (const u of ["http://docs.google.com/spreadsheets/d/e/x/pub?output=csv", "https://evil.example/spreadsheets/d/e/x/pub?output=csv",
     "https://docs.google.com/spreadsheets/d/e/x/pub?output=html", "https://docs.google.com.evil.example/spreadsheets/d/e/x/pub?output=csv", "", "pas une url"])
     assert.equal(urlCatalogueValide(u), false, u);
+});
+
+test("redirections : Google accepté, autre hôte refusé, boucle arrêtée", async () => {
+  assert.equal(hoteRedirectionValide("https://doc-0g-8s-sheets.googleusercontent.com/pub/abc"), true);
+  for (const u of ["http://doc-0g-sheets.googleusercontent.com/x", "https://evil.googleusercontent.com.evil.example/x", "https://169.254.169.254/latest", "https://docs.google.com:8443/x"])
+    assert.equal(hoteRedirectionValide(u), false, u);
+  const vers = (lieu) => new Response(null, { status: 307, headers: { location: lieu } });
+  let n = 0;
+  const google = async () => (n++ === 0 ? vers("https://doc-0g-8s-sheets.googleusercontent.com/pub/x") : new Response("nom\nA\n"));
+  assert.equal(await (await recupererCsv(URL_OK, { fetchImpl: google })).text(), "nom\nA\n");
+  await assert.rejects(recupererCsv(URL_OK, { fetchImpl: async () => vers("https://169.254.169.254/latest/meta-data") }), /non autorisé/);
+  await assert.rejects(recupererCsv(URL_OK, { fetchImpl: async () => vers(URL_OK) }), /trop de redirections/);
 });
 
 test("fonction /api/catalogue : JSON, cache CDN, adresse non configurée", async () => {
