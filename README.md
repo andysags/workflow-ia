@@ -1,34 +1,127 @@
-# workflow-ia : un site web en un prompt
+🇬🇧 English | 🇫🇷 [Français](README.fr.md)
 
-Décrivez le site que vous voulez en une phrase. Une équipe de 11 agents IA s'occupe du reste, du cahier des charges jusqu'à la mise en ligne sur Netlify, en vous demandant votre avis aux moments importants.
+# workflow-ia: a website from a single prompt
+
+> A Claude Code plugin that turns one sentence into a tested, audited website deployed on Netlify, built by a team of specialized AI agents.
+
+![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-D97757)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
+![Astro](https://img.shields.io/badge/Astro-generated_sites-BC52EE?logo=astro&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
+![Netlify](https://img.shields.io/badge/Netlify-deploy-00C7B7?logo=netlify&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+Describe the website you want in one sentence. A team of AI agents handles the rest, from the requirements to the Netlify deployment, and asks for your approval at the key moments.
 
 ```
 /workflow-ia:creer-site Un site vitrine pour mon restaurant à Cotonou, avec le menu et la réservation de table
 ```
 
-## Installation
+The commands, agent names and generated documents are in French: the project targets French-speaking small businesses, especially in West Africa. The example above asks for "a showcase site for my restaurant in Cotonou, with the menu and table booking".
 
-### 1. Prérequis
+## About
 
-- [Claude Code](https://code.claude.com) (abonnement Claude)
-- [Node.js](https://nodejs.org) 20 ou plus, `git`, et [Python 3](https://www.python.org)
-- Pour la mise en ligne : un compte [Netlify](https://www.netlify.com) gratuit et un jeton d'accès (voir plus bas)
-- Optionnel : la [CLI GitHub](https://cli.github.com) connectée (`gh auth login`), pour que le code de chaque site soit poussé sur votre GitHub
+Building even a small professional website takes several roles: requirements, design, copywriting, development, testing, security, deployment. workflow-ia assigns each role to a dedicated Claude Code agent, and an orchestrator passes their deliverables from one step to the next.
 
-### 2. Installer le plugin
+What was built:
 
-Dans Claude Code, tapez ces deux commandes :
+- **An orchestrator** (`/creer-site`, `/modifier-site`) that drives 11 specialized agents plus a collector agent, keeps project state in `etat.json`, and pauses at the three client approval points.
+- **Single-responsibility agents** (brainstorming, architect, designer, copywriter, front-end dev, back-end dev, QA, security, critic, verifier, DevOps, collector), each with a default model suited to its task.
+- **A deterministic guardrail**: a Node.js `PreToolUse` hook that blocks unsafe Netlify deployments instead of relying on agent instructions alone.
+- **A benchmark harness** that runs 11 reference requests through the full pipeline and compares build, verdicts, mobile performance, accessibility, contact links and cost.
+- **A local pack for French-speaking Africa**: WhatsApp first, Mobile Money, prices in FCFA, lightweight pages for slow connections, country-specific legal templates.
+
+Notable technical choices:
+
+- Bounded correction loops (3 QA rounds, 3 security rounds, 1 final review round), after which the decision goes back to the client.
+- Two-part final review: a critic that rejects generic "template" design, and a verifier that cross-checks every claim against evidence.
+- No invented facts: missing information is marked `[À COMPLÉTER]` ("to be completed"), and facts supplied by the client are traced back to their source.
+- Generated sites are static (Astro + Tailwind CSS, Netlify Forms), so there is no server to run by default.
+
+<!-- TODO: add screenshot -->
+
+## Key features
+
+- Build a complete website from one sentence, and resume an interrupted project.
+- Import your existing material (photos, a photographed menu, a flyer, text, an old website) with `--sources`.
+- Update a live site with `/modifier-site`: only the relevant agents run, and the site is redeployed to the same place.
+- Client-editable catalogue backed by a Google Sheets spreadsheet, refreshed on the site in about 5 minutes.
+- Custom domain setup, with the exact DNS records to create and an HTTPS check.
+- Royalty-free photos from Wikimedia Commons as placeholders until you have your own (`--photos-libres`).
+- Automatic mode (`--auto`) and premium mode (`--premium`).
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Client request] --> C[Collector<br/>00-faits.md]
+    U --> B[Brainstorming<br/>01-brief.md]
+    C --> B
+    B -->|approval| A[Architect<br/>02-architecture.md]
+    A --> D[Designer<br/>03-design.md]
+    A --> R[Copywriter<br/>04-contenu.md]
+    D -->|approval| F[Front-end dev<br/>+ back-end dev if needed]
+    R --> F
+    F --> Q[QA<br/>07-rapport-qa.md]
+    Q -->|fixes, max 3 rounds| F
+    Q --> S[Security<br/>08-rapport-securite.md]
+    S -->|blocks on serious flaw| F
+    S --> K[Critic + Verifier<br/>10, 11]
+    K -->|approval| O[DevOps<br/>GitHub + Netlify]
+```
+
+| Step | Agent | Output | Your role |
+|---|---|---|---|
+| 1 | Brainstorming | MVP requirements (`01-brief.md`) | Answer a few questions, then **approve** |
+| 2 | Architect | Technical choices (`02-architecture.md`) | — |
+| 3 | Designer + Copywriter | Visual identity (`03-design.md`), copy and SEO (`04-contenu.md`) | **Approve**, provide missing details (address, prices…) |
+| 4 | Front-end dev (+ back-end dev if needed) | The website (`site/`) | — |
+| 5 | QA | Real-browser tests and **throttled mobile performance** (`07-rapport-qa.md`), up to 3 rounds of fixes | — |
+| 6 | Security | Audit, including flaws typical of AI-written code (`08-rapport-securite.md`). **Blocks deployment** on a serious flaw | Accept or decline a deep scan |
+| 7 | Critic + Verifier | Final review: a fresh eye that rejects generic design (`10-revue-critique.md`), and an evidence-based cross-check of every claim (`11-verification.md`) | — |
+| 8 | DevOps | GitHub repo and Netlify deployment (`09-deploiement.md`) | **Approve** going live |
+
+When you provide existing material, the **collector** agent first extracts a sourced fact sheet (`00-faits.md`).
+
+By default each agent uses a model suited to its task (Sonnet for most, Haiku for DevOps), whatever model your session uses.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Platform | [Claude Code](https://code.claude.com) plugin and marketplace (agents, skills, hooks) |
+| Agents and orchestration | Markdown prompts (`agents/*.md`, `skills/*/SKILL.md`) |
+| Scripts and guardrail | Node.js (ES modules, `.mjs`), tested with `node --test` |
+| Design skills | Python 3 (`ui-ux-pro-max` plugin) |
+| Generated sites | Astro + Tailwind CSS, Netlify Forms |
+| Deployment | Netlify CLI, GitHub CLI (optional) |
+
+## Getting started
+
+### Prerequisites
+
+- [Claude Code](https://code.claude.com) (Claude subscription)
+- [Node.js](https://nodejs.org) 20 or later, `npm`, `git`, and [Python 3](https://www.python.org)
+- For deployment: a free [Netlify](https://www.netlify.com) account and an access token (see below)
+- Optional: the [GitHub CLI](https://cli.github.com), logged in (`gh auth login`), so each site's code is pushed to your GitHub
+
+The script `plugins/workflow-ia/skills/creer-site/scripts/prerequis.sh` checks these tools without installing anything.
+
+### Install the plugin
+
+In Claude Code, run these two commands:
 
 ```
 /plugin marketplace add andysags/workflow-ia
 /plugin install workflow-ia@workflow-ia
 ```
 
-Le plugin `workflow-ia` installe automatiquement ses 9 dépendances (design, rédaction, SEO, backend…).
+The `workflow-ia` plugin automatically installs its 9 dependencies (design, copywriting, SEO, back-end…).
 
-### 3. Ajouter les plugins recommandés
+### Add the recommended plugins
 
-Ils ne sont pas obligatoires : sans eux, les agents utilisent une solution de repli. Ils rendent l'équipe plus efficace.
+They are optional: without them, the agents use a fallback. They make the team more effective.
 
 ```
 /plugin install playwright@claude-plugins-official
@@ -39,11 +132,11 @@ Ils ne sont pas obligatoires : sans eux, les agents utilisent une solution de re
 /plugin install product-management@knowledge-work-plugins
 ```
 
-Si Claude Code ne trouve pas `claude-plugins-official`, ajoutez-la d'abord : `/plugin marketplace add anthropics/claude-plugins-official`.
+If Claude Code cannot find `claude-plugins-official`, add it first: `/plugin marketplace add anthropics/claude-plugins-official`.
 
-Tapez ensuite `/reload-plugins`, ou redémarrez Claude Code.
+Then run `/reload-plugins`, or restart Claude Code.
 
-### Variante : cloner le repo
+### Alternative: clone the repo
 
 ```bash
 git clone https://github.com/andysags/workflow-ia.git
@@ -51,136 +144,173 @@ cd workflow-ia
 claude
 ```
 
-Dans Claude Code, enregistrez le dossier cloné comme marketplace, puis installez le plugin :
+In Claude Code, register the cloned folder as a marketplace, then install the plugin:
 
 ```
 /plugin marketplace add ./
 /plugin install workflow-ia@workflow-ia
 ```
 
-Avec cette variante, vos modifications des agents sont prises en compte après un `/reload-plugins`, ce qui est pratique pour adapter l'équipe à vos besoins.
+With this option, your changes to the agents take effect after `/reload-plugins`, which makes it easy to adapt the team to your needs. The repo's `.claude/settings.json` also declares the marketplaces and enables the recommended plugins.
 
-### 4. Jeton Netlify (pour la mise en ligne)
+### Configuration
 
-1. Sur Netlify : **User settings → Applications → Personal access tokens → New access token**.
-2. Avant de lancer Claude Code, définissez-le dans votre terminal :
-   - macOS / Linux : `export NETLIFY_AUTH_TOKEN="votre-jeton"`
-   - Windows (PowerShell) : `$env:NETLIFY_AUTH_TOKEN="votre-jeton"`
+| Variable | Required | Purpose |
+|---|---|---|
+| `NETLIFY_AUTH_TOKEN` | No (needed to deploy) | Netlify personal access token used by the DevOps agent |
 
-Ne collez jamais ce jeton dans la conversation. Sans jeton, le site est construit et testé en local, et vous pourrez le mettre en ligne plus tard.
+To create the token:
 
-## Utilisation
+1. On Netlify: **User settings → Applications → Personal access tokens → New access token**.
+2. Before starting Claude Code, set it in your terminal:
+   - macOS / Linux: `export NETLIFY_AUTH_TOKEN="your-token"`
+   - Windows (PowerShell): `$env:NETLIFY_AUTH_TOKEN="your-token"`
 
-Placez-vous dans le dossier où vous voulez créer vos sites, lancez `claude`, puis :
+Never paste this token into the conversation. Without a token, the site is built and tested locally, and you can deploy it later.
+
+## Usage
+
+Go to the folder where you want to create your sites, start `claude`, then:
 
 ```
-/workflow-ia:creer-site <description de votre site>
+/workflow-ia:creer-site <description of your site>
 ```
 
-Chaque site est créé dans `sites/<nom-du-site>/`, avec tous les documents de travail. Pour reprendre un projet interrompu :
+Each site is created in `sites/<site-name>/`, with all its working documents. To resume an interrupted project:
 
 ```
-/workflow-ia:creer-site reprendre <nom-du-site>
+/workflow-ia:creer-site reprendre <site-name>
 ```
 
-### Donner vos éléments existants
+### Options
 
-Photos, menu ou catalogue (même photographié), flyer, documents, texte, page Facebook ou ancien site : donnez-les avec `--sources`. L'agent **collecteur** en tire une fiche de faits, chaque fait avec sa source, et l'équipe s'en sert au lieu de laisser des `[À COMPLÉTER]`.
+| Option | Effect |
+|---|---|
+| `--sources <files or URLs>` | Hands your existing material to the collector |
+| `--photos-libres` | Uses royalty-free Wikimedia Commons photos until you provide your own |
+| `--auto` | The team decides on its own at each step (decisions logged in `etat.json`). The site is then deployed as a draft only |
+| `--premium` | The designer, front-end dev, security and critic agents use Opus. Better quality, roughly double the cost |
+
+### Provide your existing material
+
+Photos, a menu or catalogue (even photographed), a flyer, documents, text, a Facebook page or an old website: pass them with `--sources`. The collector extracts a fact sheet, each fact with its source, and the team uses it instead of leaving `[À COMPLÉTER]` placeholders.
 
 ```
 /workflow-ia:creer-site Un site pour mon restaurant à Cotonou --sources menu.jpg infos.txt photo-salle.jpg
 ```
 
-Astuce : placez vos fichiers dans le dossier où vous lancez Claude Code. S'ils sont ailleurs (Téléchargements, Bureau…), Claude Code vous demandera l'autorisation de les copier dans le projet.
+Tip: put your files in the folder where you start Claude Code. If they are elsewhere (Downloads, Desktop…), Claude Code will ask permission to copy them into the project.
 
-### Faire évoluer un site
+### Update a site
 
 ```
-/workflow-ia:modifier-site <nom-du-site> "Change les horaires : fermé le lundi"
-/workflow-ia:modifier-site <nom-du-site> "Voici mes vraies photos" --sources photos/
-/workflow-ia:modifier-site <nom-du-site> "Ajoute une page Événements"
-/workflow-ia:modifier-site <nom-du-site> "Mets le site sur chezmamaafi.bj"
+/workflow-ia:modifier-site <site-name> "Change les horaires : fermé le lundi"
+/workflow-ia:modifier-site <site-name> "Voici mes vraies photos" --sources photos/
+/workflow-ia:modifier-site <site-name> "Ajoute une page Événements"
+/workflow-ia:modifier-site <site-name> "Mets le site sur chezmamaafi.bj"
 ```
 
-**Catalogue que vous modifiez vous-même :** pour un menu du jour, des prix ou un stock qui changent souvent, l'équipe peut relier votre site à un tableau **Google Sheets**. Vous changez une ligne sur votre téléphone, et le site se met à jour en 5 minutes environ, sans repasser par Claude. Demandez-le à la création, ou plus tard : `/workflow-ia:modifier-site <nom-du-site> "Je veux modifier mes prix moi-même"`.
+(These requests read: "change the opening hours: closed on Monday", "here are my real photos", "add an Events page", "put the site on chezmamaafi.bj".)
 
-**Nom de domaine :** achetez-le d'abord chez un registraire (pour `.bj`, `.ci`, `.sn`… : un registraire agréé du pays). Le DevOps le relie au site et vous donne exactement les lignes à créer dans la zone DNS. Il vérifie ensuite que le domaine et le HTTPS fonctionnent.
+**A catalogue you edit yourself:** for a daily menu, prices or stock that change often, the team can connect your site to a **Google Sheets** spreadsheet. You change a row on your phone, and the site updates in about 5 minutes, without going through Claude. Ask for it when creating the site, or later: `/workflow-ia:modifier-site <site-name> "Je veux modifier mes prix moi-même"` ("I want to edit my prices myself").
 
-Seuls les agents utiles travaillent (un changement de prix ne mobilise pas le designer), les contrôles sont proportionnés à la modification (la Sécurité intervient dès que du code, un formulaire ou une dépendance change), et le site est remis en ligne **au même endroit**. Chaque modification est notée dans `12-modifications.md`, et peut être annulée.
+**Custom domain:** buy it first from a registrar (for `.bj`, `.ci`, `.sn`…: a registrar accredited in that country). The DevOps agent connects it to the site and gives you the exact DNS records to create. It then checks that the domain and HTTPS work.
 
-## Pensé pour l'Afrique francophone
+Only the relevant agents run (a price change does not involve the designer), checks are proportional to the change (Security steps in whenever code, a form or a dependency changes), and the site is redeployed **to the same place**. Every change is logged in `12-modifications.md` and can be reverted.
 
-Quand votre activité est au Bénin, au Togo, en Côte d'Ivoire, au Sénégal ou ailleurs en Afrique francophone, l'équipe applique un **pack local** ([`afrique.md`](plugins/workflow-ia/skills/creer-site/references/afrique.md)) :
+### Indicative cost and duration
 
-- **WhatsApp et appel d'abord** : boutons « WhatsApp » et « Appeler » toujours visibles sur mobile, messages préremplis (« Bonjour, je voudrais réserver… »), formulaires qui ouvrent la conversation WhatsApp sans stocker de données.
-- **Mobile Money, en trois niveaux** :
-  - **0** : paiement sur place ou après confirmation par WhatsApp. C'est le choix par défaut.
-  - **1** : lien de paiement FedaPay ou KkiaPay.
-  - **2** : paiement intégré avec vérification obligatoire côté serveur.
+About $4.50 to $6.50 and 20 to 40 minutes per site depending on the number of pages, measured on the benchmark (versions 0.4.3 and 0.5.0). An update with `/workflow-ia:modifier-site` usually costs less than $2.
 
-  La Sécurité bloque toute mise en ligne où une clé secrète serait visible, ou une commande confirmée sans vérification.
-- **Prix en FCFA** bien écrits, **adresse avec quartier et repère**, données structurées pour Google, et conseil de créer votre fiche Google Business Profile.
-- **Connexions lentes** : moins de 500 Ko par page, photos allégées, pas de carte ni de vidéo chargée d'office.
-- **Textes légaux** : modèles de mentions légales et de politique de confidentialité qui citent la loi et l'autorité de protection des données de votre pays (APDP, ARTCI, CDP…), à faire relire.
+## Built for French-speaking Africa
 
-## Ce qui se passe
+When your business is in Benin, Togo, Côte d'Ivoire, Senegal or elsewhere in French-speaking Africa, the team applies a **local pack** ([`afrique.md`](plugins/workflow-ia/skills/creer-site/references/afrique.md)):
 
-| Étape | Agent | Ce qu'il produit | Votre rôle |
-|---|---|---|---|
-| 1 | Brainstorming | Cahier des charges du MVP (`01-brief.md`) | Répondre à quelques questions, puis **valider** |
-| 2 | Architecte | Choix techniques (`02-architecture.md`) | — |
-| 3 | Designer + Rédacteur | Charte graphique (`03-design.md`), textes et SEO (`04-contenu.md`) | **Valider**, donner les infos manquantes (adresse, prix…) |
-| 4 | Dev front (+ Dev back si besoin) | Le site (`site/`) | — |
-| 5 | QA | Tests dans un vrai navigateur et **performance sur mobile ralenti** (`07-rapport-qa.md`), jusqu'à 3 tours de corrections | — |
-| 6 | Sécurité | Audit, y compris les failles typiques du code écrit par une IA (`08-rapport-securite.md`). **Bloque la mise en ligne** en cas de faille grave | Accepter ou non un scan approfondi |
-| 7 | Critique + Vérificateur | Revue finale : un regard neuf qui refuse le design « passe-partout » (`10-revue-critique.md`), et une contre-vérification de toutes les affirmations avec preuves (`11-verification.md`) | — |
-| 8 | DevOps | Repo GitHub et mise en ligne Netlify (`09-deploiement.md`) | **Valider** la mise en ligne |
+- **WhatsApp and phone first**: "WhatsApp" and "Call" buttons always visible on mobile, pre-filled messages ("Hello, I would like to book…"), forms that open a WhatsApp conversation without storing any data.
+- **Mobile Money, in three levels**:
+  - **0**: pay on site or after confirmation over WhatsApp. This is the default.
+  - **1**: a FedaPay or KkiaPay payment link.
+  - **2**: integrated payment with mandatory server-side verification.
 
-**Mode automatique :** ajoutez `--auto` à la fin de votre demande pour que l'équipe décide seule à chaque étape (toutes ses décisions sont notées dans `etat.json`). Le site est alors mis en ligne en brouillon uniquement.
+  Security blocks any deployment where a secret key would be exposed, or where an order would be confirmed without verification.
+- **Prices in FCFA** formatted correctly, **addresses with neighbourhood and landmark**, structured data for Google, and advice to create a Google Business Profile.
+- **Slow connections**: under 500 KB per page, compressed photos, no map or video loaded by default.
+- **Legal pages**: legal notice and privacy policy templates that cite your country's data protection law and authority (APDP, ARTCI, CDP…), to be reviewed by a professional.
 
-**Mode premium :** ajoutez `--premium` pour que le designer, le développeur, la sécurité et la critique travaillent avec le modèle le plus puissant (Opus). La qualité est meilleure, mais le coût est environ doublé. Par défaut, chaque agent utilise un modèle adapté à sa tâche (Sonnet, Haiku pour la mise en ligne), quel que soit le modèle de votre session.
+## Guardrails
 
-**Coût et durée indicatifs :** environ 4,50 à 6,50 $ et 20 à 40 minutes par site selon le nombre de pages, mesurés sur le banc d'essai (versions 0.4.3 et 0.5.0). Une modification avec `/workflow-ia:modifier-site` coûte en général moins de 2 $.
+Some actions are too risky to rely on agent instructions alone. The plugin installs a **hook** that Claude Code runs before every command:
 
-Par défaut, les sites sont construits avec **Astro + Tailwind CSS**, et les formulaires passent par **Netlify Forms**, sans serveur à gérer.
+- **Netlify deployment**: in a workflow-ia project, any `netlify deploy` without an explicit folder (`--dir`) is blocked. Everywhere, a published folder that is not a built site (no `index.html`), that contains internal files (logs, deliverables, `.env`, `.git`, `node_modules`), or that has too many files (more than 2,000) is rejected. This guardrail was added after a real incident: a deployment started from the wrong folder had published working logs.
 
-## Garde-fous
+## What the team does not do (yet)
 
-Certaines actions sont trop risquées pour reposer uniquement sur les consignes des agents. Le plugin installe un **hook** que Claude Code exécute avant chaque commande :
+- It never invents information about your business. Anything missing is marked `[À COMPLÉTER]`: provide your material with `--sources` to fill it in.
+- Without your photos, images are placeholders to replace. If you ask for it ("photos libres", or `--photos-libres`), the team uses **royalty-free photos** from Wikimedia Commons in the meantime. It only keeps licences that allow commercial use, picks images without recognizable people or brands, and displays the required credits. It never takes images from anywhere else on the internet.
+- Legal pages are templates that need professional review.
 
-- **Déploiement Netlify** : dans un projet workflow-ia, tout `netlify deploy` sans dossier désigné (`--dir`) est bloqué. Partout, un dossier publié qui n'est pas un site construit (pas d'`index.html`), qui contient des fichiers internes (journaux, livrables, `.env`, `.git`, `node_modules`) ou trop de fichiers est refusé. Ce garde-fou a été ajouté après un incident réel : un déploiement lancé depuis le mauvais dossier avait publié des journaux de travail.
+## Project structure
 
-Tests : `node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs plugins/workflow-ia/skills/creer-site/scripts/tests/*.test.mjs` (garde-fou, catalogue, photos libres, nom de domaine).
+```
+workflow-ia/
+├── .claude-plugin/marketplace.json   # Claude Code marketplace (10 plugins)
+├── .claude/settings.json             # Recommended marketplaces and plugins
+├── plugins/
+│   ├── workflow-ia/                  # This project's main plugin
+│   │   ├── agents/                   # 12 agents (brainstorming, architecte, designer…)
+│   │   ├── hooks/                    # Deployment guardrail + tests
+│   │   └── skills/
+│   │       ├── creer-site/           # Orchestrator, references, templates, scripts
+│   │       └── modifier-site/        # Updating an existing site
+│   └── …                             # 9 redistributed third-party plugins (MIT)
+├── banc-essai/                       # Benchmark: reference cases, per-agent tests
+├── docs/skills-et-plugins.md         # Details of the skills and plugins used
+├── NOTICE.md                         # Origin, versions and licences of third-party plugins
+└── LICENSE
+```
 
-## Ce que l'équipe ne fait pas (encore)
+### Marketplace plugins
 
-- Elle n'invente aucune information sur votre activité. Ce qui manque est marqué `[À COMPLÉTER]` : donnez vos éléments avec `--sources` pour les remplir.
-- Sans vos photos, les images sont des emplacements à remplacer. Si vous le demandez (« photos libres », ou `--photos-libres`), l'équipe met en attendant des **photos libres de droits** de Wikimedia Commons. Elle ne retient que les licences qui autorisent l'usage commercial, les choisit sans personne reconnaissable ni marque, et affiche les crédits obligatoires. Elle ne prend jamais d'images ailleurs sur internet.
-- Les mentions légales sont des modèles à faire relire.
+This repo is a **Claude Code marketplace** (`.claude-plugin/marketplace.json`) containing 10 plugins:
 
-## Qualité mesurée
-
-Le dossier [`banc-essai/`](banc-essai/README.md) fait passer 11 demandes de référence (restaurant, salon, ONG, avocat, école, artisan, photographe, paroisse, boutique, festival, atelier payant) dans le pipeline complet, et compare les sites obtenus : build, verdicts, performance mobile, accessibilité, liens WhatsApp et téléphone, coût. Des **tests ciblés par agent** (`banc-essai/tester-agent.sh`) vérifient un agent seul sur un cas piégé, pour quelques centimes.
-
-## Contenu du repo
-
-Ce repo est une **marketplace Claude Code** (`.claude-plugin/marketplace.json`) qui contient 10 plugins :
-
-| Plugin | Rôle | Origine |
+| Plugin | Role | Origin |
 |---|---|---|
-| `workflow-ia` | Orchestrateur `/creer-site` et les 11 agents | ce projet (critique, vérificateur et contrôles IA de la sécurité adaptés de [The Agency](https://github.com/msitarzewski/agency-agents), MIT) |
-| `ui-ux-pro-max` | Design system, palettes, typographies, règles UX | [nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
+| `workflow-ia` | `/creer-site` orchestrator and the agents | this project (critic, verifier and the security agent's AI-code checks adapted from [The Agency](https://github.com/msitarzewski/agency-agents), MIT) |
+| `ui-ux-pro-max` | Design system, palettes, typography, UX rules | [nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
 | `openclaw-skills` | `github`, `spike`, `skill-creator` | [OpenClaw](https://github.com/openclaw/openclaw) |
-| `copywriting-kit` | Rédaction de pages | Sergey Skripko |
-| `seo-audit` | Audit SEO technique | Sergey Skripko |
-| `backend-design` | Conception et sécurité backend | [sheitabrk](https://github.com/sheitabrk/backend-design) |
-| `backend-performance-review` | Performance backend | [Sanoy24](https://github.com/Sanoy24/backend-performance-review) |
-| `solofounder` | Vérification, TDD, débogage | Oleksandr Karpinskyi |
-| `agent-discussion` | Débat entre agents | [cyrusxyl](https://github.com/cyrusxyl/agent-discussion) |
-| `adaptive-agent` | Amélioration continue des skills | [truenorth-lj](https://github.com/truenorth-lj/adaptive-agent-skill) |
+| `copywriting-kit` | Page copywriting | Sergey Skripko |
+| `seo-audit` | Technical SEO audit | Sergey Skripko |
+| `backend-design` | Back-end design and security | [sheitabrk](https://github.com/sheitabrk/backend-design) |
+| `backend-performance-review` | Back-end performance | [Sanoy24](https://github.com/Sanoy24/backend-performance-review) |
+| `solofounder` | Verification, TDD, debugging | Oleksandr Karpinskyi |
+| `agent-discussion` | Debate between agents | [cyrusxyl](https://github.com/cyrusxyl/agent-discussion) |
+| `adaptive-agent` | Continuous skill improvement | [truenorth-lj](https://github.com/truenorth-lj/adaptive-agent-skill) |
 
-Tous les plugins tiers sont sous licence MIT et redistribués avec leur licence d'origine. Le détail des sources, versions et modifications est dans [NOTICE.md](NOTICE.md) et [docs/skills-et-plugins.md](docs/skills-et-plugins.md).
+All third-party plugins are MIT-licensed and redistributed with their original licence. Sources, versions and modifications are detailed in [NOTICE.md](NOTICE.md) and [docs/skills-et-plugins.md](docs/skills-et-plugins.md) (both in French).
 
-## Licence
+## Tests
 
-Le code de ce projet (`plugins/workflow-ia`, documentation) est sous licence [MIT](LICENSE). Chaque plugin tiers du dossier `plugins/` garde sa propre licence, voir [NOTICE.md](NOTICE.md).
+Unit tests for the guardrail and the scripts (catalogue, royalty-free photos, domain name), using Node.js's built-in test runner:
+
+```bash
+node --test plugins/workflow-ia/hooks/garde-deploiement.test.mjs plugins/workflow-ia/skills/creer-site/scripts/tests/*.test.mjs
+```
+
+### Measured quality
+
+The [`banc-essai/`](banc-essai/README.md) folder runs 11 reference requests (restaurant, hair salon, NGO, law firm, school, craftsman, photographer, parish, shop, festival, paid workshop) through the full pipeline and compares the resulting sites: build, verdicts, mobile performance, accessibility, WhatsApp and phone links, cost.
+
+```bash
+banc-essai/lancer.sh                                  # all 11 cases
+banc-essai/lancer.sh restaurant-cotonou festival-jazz  # a few cases
+```
+
+**Per-agent tests** (`banc-essai/tester-agent.sh`) check a single agent on a trap case, for a few cents. See [banc-essai/README.md](banc-essai/README.md) for cost and usage limits.
+
+## Author
+
+Andy Sagbo ([@andysags](https://github.com/andysags))
+
+## License
+
+This project's code (`plugins/workflow-ia`, documentation) is licensed under [MIT](LICENSE). Each third-party plugin in `plugins/` keeps its own licence; see [NOTICE.md](NOTICE.md).
